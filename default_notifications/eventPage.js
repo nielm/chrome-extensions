@@ -8,11 +8,6 @@ function checkNotificationsOnState(details) {
     });
 
     chrome.contentSettings.notifications.set({
-      primaryPattern: 'https://messages.android.com/*',
-      setting: 'allow'
-    });
-    
-    chrome.contentSettings.notifications.set({
       primaryPattern: 'https://www.messenger.com/*',
       setting: 'allow'
     });
@@ -21,17 +16,22 @@ function checkNotificationsOnState(details) {
       primaryPattern: 'https://web.skype.com/*',
       setting: 'allow'
     });
-      
+
     chrome.contentSettings.notifications.set({
       primaryPattern: 'https://web.whatsapp.com/*',
       setting: 'allow'
     });
-    
+
     chrome.contentSettings.notifications.set({
       primaryPattern: 'https://open.spotify.com/*',
       setting: 'allow'
     });
-      
+
+    chrome.contentSettings.notifications.set({
+      primaryPattern: 'https://www.bennish.net/*',
+      setting: 'allow'
+    });
+
     chrome.contentSettings.notifications.set({
       primaryPattern: '<all_urls>',
       setting: 'block'
