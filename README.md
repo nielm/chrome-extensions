@@ -1,5 +1,3 @@
-# chrome
-
 Instruction to get started with git + ssh.
 
 Add your public key to https://github.com/settings/ssh.
