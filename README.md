@@ -1,4 +1,4 @@
-Instruction to get started with git + ssh.
+## git + ssh
 
 Add your public key to https://github.com/settings/ssh.
 
@@ -12,10 +12,17 @@ cd chrome-extensions
 git remote set-url origin git+ssh://git@github.com/birnenlabs/chrome-extensions
 ```
 
-Testing
+## Testing
 
 ```shell
 git add -A
 git commit -am "Update README.md"
 git push
+```
+
+
+## Upload to chrome store
+
+```shell
+zip -r extension.zip ./${extension_dir}
 ```
