@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Stop Media On Lock",
+  "description": "This extension is created for Chrome OS. When screen is locked it will go through all the tabs and stop media.",
+  "version": "1.02",
+  "icons": {
+    "16": "16.png",
+    "48": "48.png",
+    "128": "128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [{
+    "resources": ["stop_music.js", "stop_music_worker.js"],
+    "matches": ["<all_urls>"]
+  }],
+  "permissions": [
+    "tabs",
+    "scripting",
+    "idle"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

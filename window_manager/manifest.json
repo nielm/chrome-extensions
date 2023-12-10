@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "Not A Tiling Window Manager",
+  "description": "This extension is created for Chrome OS. It tries to arrange windows in columns, in a similar way to a tiling window manager.",
+  "version": "1.01",
+  "icons": {
+    "16": "16.png",
+    "64": "64.png",
+    "128": "128.png"
+  },
+  "permissions": [
+    "commands",
+    "storage",
+    "system.display",
+    "tabs"
+  ], 
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "shortcut-1": {
+      "description": "Shortcut id: 1",
+      "global": false
+    },
+    "shortcut-2": {
+      "description": "Shortcut id: 2",
+      "global": false
+    },
+    "shortcut-3": {
+      "description": "Shortcut id: 3",
+      "global": false
+    },
+    "shortcut-4": {
+      "description": "Shortcut id: 4",
+      "global": false
+    },
+    "shortcut-5": {
+      "description": "Shortcut id: 5",
+      "global": false
+    },
+    "shortcut-6": {
+      "description": "Shortcut id: 6",
+      "global": false
+    },
+    "shortcut-7": {
+      "description": "Shortcut id: 7",
+      "global": false
+    },
+    "shortcut-8": {
+      "description": "Shortcut id: 8",
+      "global": false
+    },
+    "shortcut-9": {
+      "description": "Shortcut id: 9",
+      "global": false
+    }
+  }
+}

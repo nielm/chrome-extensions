@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Not A Tiling Window Manager - Options</title>
+    <style>
+      #content {
+        margin: auto;
+        width: 90%;
+      }
+
+      .status {
+        color: red;
+        margin: 10px auto;
+      }
+
+      pre {
+        font-size: 9pt;
+      }
+      
+      textarea {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <h1>Displays</h1>
+      
+      <ul id="displays"></ul>
+
+      <h1>Options</h1>
+      
+      <h2>Actions</h2>
+      <span>Available fields</span>
+      <ul>
+        <li><b>id</b> - [required] identifier of the action, used in matchers to reference the action</li>
+        <li><b>display</b> - [required] name of display, the action will not be performed if the display of given name doesn't exist. Available values:
+          <ul>
+            <li><b>primary</b> - display defined as primary</li>
+            <li><b>-primary</b> - first display that is not primary</li>
+            <li><b>internal</b> - display defined as internal</li>
+            <li><b>-internal</b> - first display that is not internal</li>
+            <li><b>display_name</b> - name of display - check top of this page to see available options</li>
+          </ul>
+        </li>
+        <li><b>shortcutId</b> - action will be triggered by the shortcut of given id as defined on shortcuts page.</li>
+        <li><b>column</b> - definition of column, type: <i>Position</i></li>
+        <li><b>row</b> - definition of row, type: <i>Position</i></li>
+        <li><b>menuName</b> - if set, the action will be shown in the popup menu of extension, hint: you can use unicode characters here</li>
+      </ul>
+      <span><i>Position</i> object is defined using <b>start</b> and <b>end</b> fields. Following values are allowed:</span>
+      <ul>
+        <li>percentage value defined as string (from <i>'0%'</i> to <i>'100%'</i>) - window will be set at percentage position of the screen</li>
+        <li>number - window will be set as pixel position (note these are logical pixels that are defined after applying the scale)</li>
+        <li>negative number - window will be set at pixel position counting from abs(number).</li>
+      </ul>
+      
+      <div class="status" id="actionsInputStatus"></div>
+      <textarea id="actionsInput" rows="25" cols="50"></textarea>
+      
+      <h2>Matchers</h2>
+      <span>Available fields</span>
+      <ul>
+        <li><b>actions</b> - [required] array of strings - action ids to perform on the window if matched. Note: action definition contains display, action will not be performed if display doesn't exist. Type of this field is array, so one matcher can be used with different actions, specified for different displays (e.g. to prioritise window to be shown on non internal display and revert to internal if non internal doesn't exist).</li>
+        <li><b>windowTypes</b> - array of window types to match as defined <a href="https://developer.chrome.com/docs/extensions/reference/windows/#type-WindowType">here</a>. Window will be matched if its type is in the array</li>
+        <li><b>anyTabUrl</b> - url as string. Window will be matched if any of its tabs urls matches this string.</li>      
+        <li><b>minTabsNum</b> - number of tabs. Window will be matched when it has at least minTabsNum tabs opened. Default: <i>0</i></li>
+        <li><b>maxTabsNum</b> - number of tabs. Window will be matched when it has at most maxTabsNum tabs opened. Default: <i>1'000'000'000</i></li>
+      </ul>
+      <span>Matcher fields are only tested if set - empty matcher object with action definition will match any window. Actions are performed in order of matcher definitions and of actions in the actions array. If a window matches multiple matchers, previous values will be overwritten by the most recent values. Note that only values that are set are getting overwritten - it is possible tht one action will set row values and another one will set columns.</span>
+      
+      <div class="status" id="matchersInputStatus"></div>
+      <textarea id="matchersInput" rows="25" cols="50"></textarea>
+
+      <h2>Settings</h2>
+      <div class="status" id="settingsInputStatus"></div>
+      <textarea id="settingsInput" rows="10" cols="50"></textarea>
+  
+      <div class="status" id="status"></div>
+      <button id="validate">Validate</button>
+      <button id="format">Format</button>
+      <button id="save">Save</button>
+
+      <h1>Examples</h1>
+
+      <h2>Actions</h2>
+      <pre>
+[
+  {
+    "id":         "column1",
+    "menuName":   "set to add action to popup menu. you can use unicode: ◻◼◻",
+    "display":    "primary",
+    "column":     {"start": 0, "end": "33.3%"},
+    "row":        {"start": 0, "end": "100%"}
+  },
+  {
+    "id":         "column2",
+    "shortcutId": 1,
+    "display":    "primary",
+    "column":     {"start": "33.3%", "end": "100%"},
+    "row":        {"start": 0, "end": "100%"}
+  },
+  {
+    "id":         "adjust-height",
+    "display":    "primary",
+    "row":        {"start": 20, "end": -20}
+  },
+  {
+    "id":         "external-adjust-height",
+    "display":    "-internal",
+    "row":        {"start": 0, "end": -20}
+  }
+]
+      </pre>
+
+      <h2>Matchers</h2>
+      <pre>
+[
+  {
+    "action":      ["column2"]
+  },
+  {
+    "action":      ["column1"],
+    "windowTypes": ["app", "popup"]
+  },
+  {
+    "action":      ["adjust-height"],
+    "anyTabUrl":   "//web.whatsapp.com",
+    "windowTypes": ["popup"]
+  },
+  {
+    "action":      ["adjust-height", "external-adjust-height"],
+    "anyTabUrl":   "//www.messenger.com",
+    "windowTypes": ["popup"]
+  }
+]   
+      </pre>
+
+      <h2>Settings</h2>
+      <pre>
+{
+  "popupButtonColor": "#f9f9f9",
+  "popupBackgroundColor": "white",
+  "triggerOnMonitorChange": false,
+  "triggerOnWindowCreated": true
+}
+      </pre>
+      
+    </div>
+
+    <script src="./options.js"></script>
+  </body>
+</html>

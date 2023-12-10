@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      #main {
+        margin: 0;
+        padding: 12px;
+        width: 324px;
+        overflow: hidden;
+      }
+      #organise {
+        font-size: 60px;
+        height: 100px;
+        width: 100%;
+      }
+      button {
+        border-radius: 8px;
+        border-width: 1px;
+      }
+      button:hover {
+        filter: brightness(90%);
+      }
+      #actions {
+        margin: 50px 0;
+      }
+      #actions:empty {
+        display: none;
+      }
+      #actions button {
+        margin-bottom: 6px;
+        height: 50px;
+        width: calc(50% - 3px);
+      }
+      #actions button:nth-child(odd) {
+        clear: left;
+        float: left;
+      }
+      #actions button:nth-child(even) {
+        clear: right;
+        float: right;
+      }
+      #clear {
+        clear: both;
+      }
+    </style>
+  </head> 
+  <body>
+    <div id='main'>
+      <button id='organise'>🪄</button>
+      <div id='actions'></div>
+      <div id='clear'></div>
+    </div>
+    <script src="./popup.js" type="module"></script>
+  </body>
+</html>
