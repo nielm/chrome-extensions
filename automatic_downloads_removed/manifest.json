@@ -1,9 +1,9 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
 
   "name": "Automatic Downloads Remover",
   "description": "This extension automatically removes downloaded files that are older than 24 hours.",
-  "version": "1.0.4",
+  "version": "1.1.0",
 
   "permissions": [
     "downloads",
@@ -15,8 +15,7 @@
   },
 
   "background": {
-    "scripts": ["eventPage.js"],
-    "persistent": false
+    "service_worker": "eventPage.js"
   }
 }
 
