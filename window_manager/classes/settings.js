@@ -8,7 +8,8 @@ export class Settings {
   static load() {
     return chrome.storage.sync.get({settings: ''})
       .then(item => item.settings)
-      .then(settings => JSON.parse(settings))
-      .then(json => Object.assign(new Settings(), json));
+      .then(settings => (settings ?
+                         Object.assign(new Settings(), JSON.parse(settings))
+                         : new Settings()));
   }
 }
