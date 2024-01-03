@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Not A Tiling Window Manager",
-  "description": "This extension is created for Chrome OS. It tries to arrange windows in columns, in a similar way to a tiling window manager.",
-  "version": "1.01",
+  "name": "JSON Window Manager",
+  "description": "This extension is created for Chrome OS. It arranges chrome windows according to rules defined by the user in json settings.",
+  "version": "1.02",
   "icons": {
     "16": "16.png",
     "64": "64.png",
@@ -13,7 +13,7 @@
     "storage",
     "system.display",
     "tabs"
-  ], 
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
