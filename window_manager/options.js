@@ -3,7 +3,7 @@ function saveOptions() {
   const matchers = document.getElementById('matchersInput').value;
   const settings = document.getElementById('settingsInput').value;
 
-  if (validateOptions()) { 
+  if (validateOptions()) {
     chrome.storage.sync.set(
       {actions, matchers, settings},
       () => {
@@ -56,7 +56,7 @@ function formatOptions() {
   const actions = document.getElementById('actionsInput').value;
   const matchers = document.getElementById('matchersInput').value;
   const settings = document.getElementById('settingsInput').value;
-  
+
   if (validateOptions()) {
     document.getElementById('actionsInput').value = JSON.stringify(JSON.parse(actions), undefined, 2);
     document.getElementById('matchersInput').value = JSON.stringify(JSON.parse(matchers), undefined, 2);
@@ -83,7 +83,7 @@ async function showDisplays() {
   el.textContent = '';
   for (const display of displays) {
     const displayEl = document.createElement('li');
-    displayEl.textContent = `name: ${display.name}, primary ${display.isPrimary}, internal: ${display.isInternal}`;
+    displayEl.textContent = `name: '${display.name}', primary: '${display.isPrimary}', internal: '${display.isInternal}'`;
     el.appendChild(displayEl);
   }
 }
