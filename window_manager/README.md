@@ -2,7 +2,7 @@
 
 The extension is automatically arranging chrome windows, according to the predefined rules stored as JSON configuration. This extension was created and tested on Chrome OS. It should work on other operating systems but will not be able to organize windows that don't belong to the chrome browser.
 
-This page describes options that are available on the [options page](chrome-extension://jjgebfkefchhekbmckeheacgbiicpmim/options.html) of the extension.
+This page describes options that are available on the options page (`chrome-extension://jjgebfkefchhekbmckeheacgbiicpmim/options.html`) of the extension.
 
 ## Actions
 
@@ -21,7 +21,7 @@ Action defines how the window should be moved and resized. Following fields are 
   
   _Hint: List of displays is printed at the top of the extension options page._
 
-- `shortcutId` - action will be triggered by the shortcut of given id as defined on the [shortcuts page](chrome://extensions/shortcuts).
+- `shortcutId` - action will be triggered by the shortcut of given id as defined on the shortcuts page (`chrome://extensions/shortcuts`).
 
   _This extension registered 9 shortcuts with an ids from `1` to `9`. Please define the shortcut on the shortcuts page._
 
