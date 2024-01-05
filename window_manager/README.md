@@ -1,8 +1,10 @@
-### Extension
+## Extension
 
 The extension is automatically arranging chrome windows, according to the predefined rules stored as JSON configuration. This extension was created and tested on Chrome OS. It should work on other operating systems but will not be able to organize windows that don't belong to the chrome browser.
 
-### Actions
+This page describes options that are available on the [options page](chrome-extension://jjgebfkefchhekbmckeheacgbiicpmim/options.html) of the extension.
+
+## Actions
 
 Action defines how the window should be moved and resized. Following fields are supported:
 
@@ -23,15 +25,23 @@ Action defines how the window should be moved and resized. Following fields are 
 
   _This extension registered 9 shortcuts with an ids from `1` to `9`. Please define the shortcut on the shortcuts page._
 
-- `column` - definition of column, type: `Position`
+- `column` - definition of column
 
-- `row `- definition of row, type: `Position`
+- `row `- definition of row
 
 - `menuName` - if set, the action will be shown in the popup menu of extension
   
   _Hint: you can use unicode characters in the menu name._
 
-#### Examples
+The `row` and `column` objects are defined using `start` and `end` fields. Following values of `start` and `end` are allowed:
+- `percentage value` defined as string (between `"0%"` and `"100%"`) - window will be set at percentage position of the screen
+- `number` - window will be set at the pixel position, counting from the top left
+- `negative number` - window will be set at pixel position counting from the bottom right (using the absolute value)
+
+The values are counted from the top left corner (top for the row definition and left for the column definition). On the hidpi displays they are the logical pixels that are defined after applying the scale.
+
+### Example
+
 ```json
 [
   {
@@ -51,14 +61,74 @@ Action defines how the window should be moved and resized. Following fields are 
   }
 ]
 ```
+
 The actions above are dividing the screen into 2 columns. The first one will occupy 1/3 of the screen and the second one will occupy the remaining 2/3.
 Both actions will be performed only if non-internal monitor is connected. They also both specify menu names - after left clicking on the extension icon these actions will be available, the unicode characters of ◻ and ◼ are visualising how much screen is used by each action.
 In addition to that the first action can be called by using keyboard shortcut number 3.
 
+## Matchers
 
-### FAQ
+Matchers define which action should be applied on a matched window. Following fields are supported:
 
-#### How to use multiple displays with priority?
+- `actions` - **required**, array of strings - action ids to perform on the window if matched.
+
+  _Please remember that an action definition contains a display. The action will not be performed if display doesn't exist._
+
+  Type of this field is array, so one matcher can be used with many actions, specified for different displays.
+
+- `windowTypes` - array of window types to match as [defined here](https://developer.chrome.com/docs/extensions/reference/windows/#type-WindowType). Window will be matched if its type is in the array.
+
+  _**Default**: any window type_
+
+- `anyTabUrl` - url as string. The window will be matched if any of its tabs urls matches this string.
+
+  _**Default**: any url_
+  
+- `minTabsNum` - number of tabs. Window will be matched when it has at least `minTabsNum` tabs opened.
+
+  _**Default**: 0_
+
+- `maxTabsNum` - number of tabs. Window will be matched when it has at most `maxTabsNum` tabs opened.
+
+  _**Default**: 1'000'000'000_
+
+The default values are specified in a way that an empty matcher will match any window. This can be used as a default action (e.g. to maximise every window by default).
+
+In case of multiple matches they are processed in a matchers order (_Note that only values that are set are getting overwritten - it is possible that one action will set row values and another one will set columns_).
+
+### Example
+
+```json
+[
+  {
+    "actions": ["column1"],
+    "windowTypes": ["app", "popup"]
+  },
+  {
+    "actions": ["column2"],
+    "anyTabUrl": "//github.com/"
+  }
+]
+```
+
+In the example above:
+- all the `app` and `popup` windows will be moved to the left 1/3 of the screen
+- browser window with `github.com` tab opened will be moved to the right 2/3 of the screen
+- popup window with `github.com` page will be moved to the right 2/3 as the matcher is defined later in the settings
+
+## Settings
+
+Since the extension requires JSON knowledge to define the actions and matchers, it is simpler to specify settings as JSON instead of preparing an UI for each parameter. The following settings are possible:
+
+- `popupBackgroundColor` - string definition of color of the popup window background that is opened by the left click on the extension (e.g. `"white"`).
+- `popupButtonColor` - string definition of color of the popup window buttons (e.g. `"#f9f9f9"`).
+- `triggerOnMonitorChange` - boolean value - when true, the extension will rearrange all the windows when new monitors are connected or disconnected
+- `triggerOnWindowCreated` - boolean value - when true, the extension will apply matchers to newly created windows
+
+
+## FAQ
+
+### How to use multiple displays with priority?
 Actions are performed in an order of matchers. Let's assume you want to process `github.com` window:
 - on the external display the window should occupy left half of the screen
 - on the internal display it should occupy the entire screen
@@ -95,13 +165,3 @@ With the actions, let's define matchers for `github.com` window:
 ```
 
 Matchers are processed in order of definition. If both internal and non internal monitors exist, the action that is defined later (`non-internal-half`) will be applied. If only an internal monitor exists, the `non-internal-half` action will not be performed as it requires `"display": "-internal"`.
-
-### Options page
-
-[Options page](chrome-extension://jjgebfkefchhekbmckeheacgbiicpmim/options.html) can be accessed by right clickng on the extension icon. I contains the following sections:
-
-- Displays
-- Options
-    - Actions
-    - Matchers
-    - Settings
