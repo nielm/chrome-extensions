@@ -63,7 +63,9 @@ The values are counted from the top left corner (top for the row definition and 
 ```
 
 The actions above are dividing the screen into 2 columns. The first one will occupy 1/3 of the screen and the second one will occupy the remaining 2/3.
+
 Both actions will be performed only if non-internal monitor is connected. They also both specify menu names - after left clicking on the extension icon these actions will be available, the unicode characters of ◻ and ◼ are visualising how much screen is used by each action.
+
 In addition to that the first action can be called by using keyboard shortcut number 3.
 
 ## Matchers
