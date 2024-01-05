@@ -1,4 +1,9 @@
-## git + ssh
+## Documentation
+
+- [JSON Window Manager](window_manager/README.md)
+
+## Developer Documentation
+### git + ssh
 
 Add your public key to https://github.com/settings/ssh.
 
@@ -12,7 +17,7 @@ cd chrome-extensions
 git remote set-url origin git+ssh://git@github.com/birnenlabs/chrome-extensions
 ```
 
-## Testing
+### Testing
 
 ```shell
 git add -A
@@ -21,7 +26,7 @@ git push
 ```
 
 
-## Upload to chrome store
+### Upload to chrome store
 
 ```shell
 zip -r extension.zip ./${extension_dir}
