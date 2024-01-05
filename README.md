@@ -1,3 +1,8 @@
+### Documentation
+
+- [JSON Window Manager](window_manager/README.md)
+
+### Developer Documentation
 ## git + ssh
 
 Add your public key to https://github.com/settings/ssh.
