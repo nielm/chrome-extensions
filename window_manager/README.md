@@ -165,3 +165,68 @@ With the actions, let's define matchers for `github.com` window:
 ```
 
 Matchers are processed in order of definition. If both internal and non internal monitors exist, the action that is defined later (`non-internal-half`) will be applied. If only an internal monitor exists, the `non-internal-half` action will not be performed as it requires `"display": "-internal"`.
+
+## Examples
+
+Actions
+```json
+[
+  {
+    "id":         "column1",
+    "menuName":   "set to add action to popup menu. you can use unicode: ◻◼◻",
+    "display":    "primary",
+    "column":     {"start": 0, "end": "33.3%"},
+    "row":        {"start": 0, "end": "100%"}
+  },
+  {
+    "id":         "column2",
+    "shortcutId": 1,
+    "display":    "primary",
+    "column":     {"start": "33.3%", "end": "100%"},
+    "row":        {"start": 0, "end": "100%"}
+  },
+  {
+    "id":         "adjust-height",
+    "display":    "primary",
+    "row":        {"start": 20, "end": -20}
+  },
+  {
+    "id":         "external-adjust-height",
+    "display":    "-internal",
+    "row":        {"start": 0, "end": -20}
+  }
+]
+```
+      
+Matchers
+```json
+[
+  {
+    "action":      ["column2"]
+  },
+  {
+    "action":      ["column1"],
+    "windowTypes": ["app", "popup"]
+  },
+  {
+    "action":      ["adjust-height"],
+    "anyTabUrl":   "//web.whatsapp.com",
+    "windowTypes": ["popup"]
+  },
+  {
+    "action":      ["adjust-height", "external-adjust-height"],
+    "anyTabUrl":   "//www.messenger.com",
+    "windowTypes": ["popup"]
+  }
+]
+```
+      
+Settings
+```json
+{
+  "popupButtonColor": "#f9f9f9",
+  "popupBackgroundColor": "white",
+  "triggerOnMonitorChange": false,
+  "triggerOnWindowCreated": true
+}
+```
