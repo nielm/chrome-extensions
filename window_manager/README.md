@@ -170,65 +170,445 @@ Matchers are processed in order of definition. If both internal and non internal
 
 ## Examples
 
-Actions
+<details>
+  <summary>Actions</summary>
+  
 ```json
 [
   {
-    "id":         "column1",
-    "menuName":   "set to add action to popup menu. you can use unicode: ◻◼◻",
-    "display":    "primary",
-    "column":     {"start": 0, "end": "33.3%"},
-    "row":        {"start": 0, "end": "100%"}
+    "comment": "Internal display has two overlapping columns - this is the one to the left.",
+    "id": "internal-column1",
+    "display": "internal",
+    "column": {
+      "start": 0,
+      "end": "60%"
+    },
+    "row": {
+      "start": 0,
+      "end": "70%"
+    }
   },
   {
-    "id":         "column2",
+    "comment": "Internal display has two overlapping columns - this is the one to the right.",
+    "id": "internal-column2",
+    "display": "internal",
+    "column": {
+      "start": "20%",
+      "end": "100%"
+    },
+    "row": {
+      "start": 0,
+      "end": -30
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "internal-1-3",
+    "display": "internal",
+    "column": {
+      "start": 60,
+      "end": "60%"
+    },
+    "row": {
+      "start": 0,
+      "end": "75%"
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "internal-2-3",
+    "display": "internal",
+    "column": {
+      "start": 30,
+      "end": "60%"
+    },
+    "row": {
+      "start": 40,
+      "end": "75%"
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "internal-3-3",
+    "display": "internal",
+    "column": {
+      "start": 0,
+      "end": "60%"
+    },
+    "row": {
+      "start": 80,
+      "end": "75%"
+    }
+  },
+  {
+    "id": "internal-music",
+    "display": "internal",
+    "column": {
+      "start": 0,
+      "end": "50%"
+    },
+    "row": {
+      "start": 120,
+      "end": -30
+    }
+  },
+  {
+    "comment": "Status bar on internal - uses the entire display width.",
+    "id": "internal-status",
+    "display": "internal",
+    "column": {
+      "start": 0,
+      "end": "100%"
+    },
+    "row": {
+      "start": -30,
+      "end": "100%"
+    }
+  },
+  {
+    "id": "internal-calculator",
+    "display": "internal",
+    "column": {
+      "start": 0,
+      "end": 500
+    },
+    "row": {
+      "start": -330,
+      "end": -30
+    }
+  },
+  {
+    "comment": "External display is divided into 3 columns: 25%, 37.5% and 37.5%. Defining column 2 first as order is used in the popup menu and I want this one to be first.",
+    "id": "column2",
     "shortcutId": 1,
-    "display":    "primary",
-    "column":     {"start": "33.3%", "end": "100%"},
-    "row":        {"start": 0, "end": "100%"}
+    "menuName": "◻◼◻",
+    "display": "-internal",
+    "column": {
+      "start": "25%",
+      "end": "62.5%"
+    },
+    "row": {
+      "start": 0,
+      "end": "100%"
+    }
   },
   {
-    "id":         "adjust-height",
-    "display":    "primary",
-    "row":        {"start": 20, "end": -20}
+    "comment": "External display is divided into 3 columns: 25%, 37.5% and 37.5%.",
+    "id": "column3",
+    "shortcutId": 2,
+    "menuName": "◻◻◼",
+    "display": "-internal",
+    "column": {
+      "start": "62.5%",
+      "end": "100%"
+    },
+    "row": {
+      "start": 0,
+      "end": "100%"
+    }
   },
   {
-    "id":         "external-adjust-height",
-    "display":    "-internal",
-    "row":        {"start": 0, "end": -20}
+    "comment": "External display is divided into 3 columns: 25%, 37.5% and 37.5%. First column uses 75% of height only.",
+    "id": "column1",
+    "menuName": "◼◻◻",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "25%"
+    },
+    "row": {
+      "start": 0,
+      "end": "75%"
+    }
+  },
+  {
+    "comment": "Two columns that occupy 75% of the screen. Currently not used by any matcher but only as menu.",
+    "id": "column2+3",
+    "menuName": "◻◼◼",
+    "display": "-internal",
+    "column": {
+      "start": "25%",
+      "end": "100%"
+    },
+    "row": {
+      "start": 0,
+      "end": "100%"
+    }
+  },
+  {
+    "id": "IDE",
+    "display": "-internal",
+    "column": {
+      "start": "20%",
+      "end": "100%"
+    },
+    "row": {
+      "start": 0,
+      "end": -30
+    }
+  },
+  {
+    "comment": "This is for the desks where single chat app is visible - not need to use 'x-3' layout.",
+    "id": "chat",
+    "display": "-internal",
+    "row": {
+      "start": 0,
+      "end": "50%"
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "1-3",
+    "display": "-internal",
+    "column": {
+      "start": 60,
+      "end": "25%"
+    },
+    "row": {
+      "start": 0,
+      "end": "50%"
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "2-3",
+    "display": "-internal",
+    "column": {
+      "start": 30,
+      "end": "25%"
+    },
+    "row": {
+      "start": 40,
+      "end": "50%"
+    }
+  },
+  {
+    "comment": "Three chat apps (whatsapp, messenger and sms) should be visible all the time - the 'x-3' rules are positioning these three windows in a way that the top left icon is always visible.",
+    "id": "3-3",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "25%"
+    },
+    "row": {
+      "start": 80,
+      "end": "50%"
+    }
+  },
+  {
+    "id": "music",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "25%"
+    },
+    "row": {
+      "start": "50%",
+      "end": -30
+    }
+  },
+  {
+    "comment": "Status bar on external - uses the left part of the screen.",
+    "id": "status",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "25%"
+    },
+    "row": {
+      "start": -30,
+      "end": "100%"
+    }
+  },
+  {
+    "id": "calculator",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": 500
+    },
+    "row": {
+      "start": -330,
+      "end": -30
+    }
+  },
+  {
+    "id": "keep",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "25%"
+    },
+    "row": {
+      "start": "50%",
+      "end": -30
+    }
+  },
+  {
+    "id": "ssh-profile",
+    "display": "-internal",
+    "column": {
+      "start": 0,
+      "end": "20%"
+    },
+    "row": {
+      "start": 0,
+      "end": -30
+    }
   }
 ]
 ```
-      
-Matchers
+</details>
+
+<details>
+  <summary>Matchers</summary>
+
 ```json
 [
   {
-    "action":      ["column2"]
+    "actions": [
+      "internal-column2",
+      "column3"
+    ]
   },
   {
-    "action":      ["column1"],
-    "windowTypes": ["app", "popup"]
+    "actions": [
+      "internal-column1",
+      "column1"
+    ],
+    "windowTypes": [
+      "app",
+      "popup"
+    ]
   },
   {
-    "action":      ["adjust-height"],
-    "anyTabUrl":   "//web.whatsapp.com",
-    "windowTypes": ["popup"]
+    "actions": [
+      "column2"
+    ],
+    "anyTabUrl": "//mail.google.com/"
   },
   {
-    "action":      ["adjust-height", "external-adjust-height"],
-    "anyTabUrl":   "//www.messenger.com",
-    "windowTypes": ["popup"]
+    "actions": [
+      "internal-music",
+      "music"
+    ],
+    "anyTabUrl": "//www.radiotunes.com/",
+    "windowTypes": [
+      "popup"
+    ]
+  },
+  {
+    "actions": [
+      "internal-music",
+      "music"
+    ],
+    "anyTabUrl": "//music.youtube.com/",
+    "windowTypes": [
+      "popup"
+    ]
+  },
+  {
+    "actions": [
+      "internal-status",
+      "status"
+    ],
+    "anyTabUrl": "//birnenlabs.com/pwa/status/bar/index.html",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "internal-calculator",
+      "calculator"
+    ],
+    "anyTabUrl": "//birnenlabs.com/pwa/calculator/index.html",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "internal-column2",
+      "ide"
+    ],
+    "anyTabUrl": "//cider-v.corp.google.com",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "internal-column1",
+      "column1",
+      "chat"
+    ],
+    "anyTabUrl": "//mail.google.com/chat",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "ssh-profile"
+    ],
+    "anyTabUrl": "chrome-extension://iodihamcpbpeioajjeobimgagajmlibd/html/nassh.html?#profile-id:78ff",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "keep"
+    ],
+    "anyTabUrl": "//keep.google.com/",
+    "windowTypes": [
+      "app"
+    ]
+  },
+  {
+    "actions": [
+      "internal-1-3",
+      "1-3"
+    ],
+    "anyTabUrl": "//messages.google.com/",
+    "windowTypes": [
+      "popup"
+    ]
+  },
+  {
+    "actions": [
+      "internal-2-3",
+      "2-3"
+    ],
+    "anyTabUrl": "//www.messenger.com/",
+    "windowTypes": [
+      "popup"
+    ]
+  },
+  {
+    "actions": [
+      "internal-3-3",
+      "3-3"
+    ],
+    "anyTabUrl": "//web.whatsapp.com/",
+    "windowTypes": [
+      "popup"
+    ]
   }
 ]
 ```
-      
-Settings
+</details>
+
+<details>
+  <summary>Settings</summary>
+
 ```json
 {
   "popupButtonColor": "#f9f9f9",
   "popupBackgroundColor": "white",
-  "triggerOnMonitorChange": false,
+  "triggerOnMonitorChange": true,
   "triggerOnWindowCreated": true
 }
 ```
+</details>
