@@ -36,19 +36,28 @@ export class Action {
     return Object.assign(new Action(), json);
   }
 
-  findDisplay(displays) {
-    switch(this.display) {
-      case 'primary':
-        return displays.find(display => display.isPrimary === true);
-      case '-primary':
-        return displays.find(display => display.isPrimary === false);
-      case 'internal':
-        return displays.find(display => display.isInternal === true);
-      case '-internal':
-        return displays.find(display => display.isInternal === false);
-      default:
-        return displays.find(display => display.name === this.display);
+  findDisplay(displays, d) {
+    const displayMatchers = d.split(/,\s*/);
+    for(const displayMatcher of displayMatchers) {
+      displays = displays.filter((d) => {
+        switch(displayMatcher) {
+          case 'primary':
+            return d.isPrimary === true;
+          case '-primary':
+            return d.isPrimary === false;
+          case 'internal':
+            return d.isInternal === true;
+          case '-internal':
+            return d.isInternal === false;
+          default:
+            return d.name === displayMatcher;
+        };
+      });
     }
+    if(displays.length) {
+      return displays[0];
+    }
+    return null;
   }
   
   createUpdate(displays) {
