@@ -7,17 +7,19 @@ export class Action {
   id;
   // id of the display, action will not be performed if display doesn't exist
   display;
+  // top and left position of the display on the desktop
+  displayPosition;
   menuName;
   shortcutId;
 
   static loadAll() {
     return chrome.storage.sync.get({actions: ''})
       .then(items => items.actions)
-      .then(actions => (actions 
+      .then(actions => (actions
                         ? JSON.parse(actions).map(a => Action.from(a))
                         : []));
   }
-  
+
   static from(json) {
     if (!json.id) {
       console.error(json);
@@ -25,7 +27,7 @@ export class Action {
     }
     if (!json.display) {
       console.error(json);
-      throw new Error('display id not defined');
+      throw new Error('display not defined');
     }
     if (json.column) {
       json.column = Object.assign(new Position(), json.column);
@@ -36,28 +38,70 @@ export class Action {
     return Object.assign(new Action(), json);
   }
 
+  /**
+   * @param {Array<chrome.system.display>} displays
+   * @returns {Array<chrome.system.display>} filtered list of displays
+   */
   findDisplay(displays) {
-    switch(this.display) {
-      case 'primary':
-        return displays.find(display => display.isPrimary === true);
-      case '-primary':
-        return displays.find(display => display.isPrimary === false);
-      case 'internal':
-        return displays.find(display => display.isInternal === true);
-      case '-internal':
-        return displays.find(display => display.isInternal === false);
-      default:
-        return displays.find(display => display.name === this.display);
+    displays = this.filterByName(displays);
+    displays = this.filterByDisplayPosition(displays);
+    if(displays.length > 0) {
+      return displays[0];
     }
+    return null;
   }
-  
+
+  /**
+   * @param {Array<chrome.system.display>} displays
+   * @returns {Array<chrome.system.display>} filtered list of displays
+   */
+  filterByName(displays) {
+    return displays.filter((d) => {
+      switch(this.display) {
+        case 'primary':
+          return d.isPrimary === true;
+        case '-primary':
+          return d.isPrimary === false;
+        case 'internal':
+          return d.isInternal === true;
+        case '-internal':
+          return d.isInternal === false;
+        case '':
+        case undefined:
+        case null:
+          return true; // matches any display.
+        default:
+          return d.name === this.display;
+      }
+    });
+  }
+
+  /**
+   * @param {Array<chrome.system.display>} displays
+   * @returns {Array<chrome.system.display>} filtered list of displays
+   */
+  filterByDisplayPosition(displays) {
+    return displays.filter((d) => {
+      if(this.displayPosition?.top != null &&
+        this.displayPosition.top !== d.bounds.top) {
+          return false;
+      }
+      if(this.displayPosition?.left != null &&
+        this.displayPosition.left !== d.bounds.left) {
+          return false;
+      }
+      return true;
+    });
+  }
+
+
   createUpdate(displays) {
     const display = this.findDisplay(displays);
     if (!display) {
       console.debug(`Display ${this.display} not found`);
       return {};
     }
-    
+
     const windowsUpdate = {
       state: 'normal',
       focused: true

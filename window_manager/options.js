@@ -83,7 +83,9 @@ async function showDisplays() {
   el.textContent = '';
   for (const display of displays) {
     const displayEl = document.createElement('li');
-    displayEl.textContent = `name: '${display.name}', primary: '${display.isPrimary}', internal: '${display.isInternal}'`;
+    delete display.bounds.width;
+    delete display.bounds.height;
+    displayEl.textContent = `name: '${display.name}', primary: '${display.isPrimary}', internal: '${display.isInternal}', position: '${JSON.stringify(display.bounds)}'`
     el.appendChild(displayEl);
   }
 }
