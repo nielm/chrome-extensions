@@ -21,8 +21,10 @@ function validateOptions() {
   const settings = document.getElementById('settingsInput').value;
 
   let valid = true;
+  let actionsObj;
+  let matchersObj;
   try {
-    JSON.parse(actions);
+    actionsObj = JSON.parse(actions);
     document.getElementById('actionsInputStatus').textContent = '';
   } catch (e) {
     document.getElementById('actionsInputStatus').textContent = e.message;
@@ -30,7 +32,7 @@ function validateOptions() {
   }
 
   try {
-    JSON.parse(matchers);
+    matchersObj=JSON.parse(matchers);
     document.getElementById('matchersInputStatus').textContent = '';
   } catch (e) {
     document.getElementById('matchersInputStatus').textContent = e.message;
@@ -46,9 +48,20 @@ function validateOptions() {
   }
 
   if (valid) {
-    setStatus('Valid');
+    // verify matchers reference valid actions.
+    const actionIDs = new Set(actionsObj.map((a) => a.id));
+    const referencedActionIDs = new Set(matchersObj.map((m)=> m.actions).flat());
+
+    const missing = [...referencedActionIDs.values()].filter((id) => !actionIDs.has(id));
+    if(missing.length > 0) {
+      document.getElementById('matchersInputStatus').textContent = `matchers refer to unknown action ids: ${JSON.stringify(missing)}`;
+      valid =  false;
+    }
   }
 
+  if(valid) {
+    setStatus('Valid');
+  }
   return valid;
 }
 
