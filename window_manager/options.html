@@ -16,37 +16,73 @@
       pre {
         font-size: 9pt;
       }
-      
+
       textarea {
         width: 100%;
       }
+
+      table, th, td {
+        border: 1px solid black;
+        padding: 5px;
+        text-align: center;
+      }
+      th {
+        font-weight: bold;
+        background-color: lightsteelblue;
+      }
+      table {
+        border-collapse: collapse;
+      }
+
     </style>
   </head>
   <body>
     <div id="content">
       <h1>Displays</h1>
-      
-      <ul id="displays"></ul>
+      <table>
+        <thead >
+          <th>Name</th>
+          <th>ID</th>
+          <th>primary</th>
+          <th>internal</th>
+          <th>Desktop position</td>
+        </thead>
+        <tbody id="displays">
+        </tbody>
+      </table>
+
+      <!-- template for a displayRow -->
+      <table style="display: none">
+        <tbody>
+          <tr id="displayRow">
+            <td style="font-weight: bold;">Name</td>
+            <td>ID</td>
+            <td>primary</td>
+            <td>internal</td>
+            <td style="font-family: monospace;">position</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h1>Options</h1>
 
       Please follow the
-      <a href='https://github.com/birnenlabs/chrome-extensions/blob/main/window_manager/README.md'>documentation on github</a>.
-      
+      <a href='https://github.com/birnenlabs/chrome-extensions/blob/main/window_manager/README.md' target="_blank">documentation on github</a>.
+
       <h2>Actions</h2>
-      
+
       <div class="status" id="actionsInputStatus"></div>
       <textarea id="actionsInput" rows="25" cols="50"></textarea>
-      
+
       <h2>Matchers</h2>
-      
+
       <div class="status" id="matchersInputStatus"></div>
       <textarea id="matchersInput" rows="25" cols="50"></textarea>
 
       <h2>Settings</h2>
       <div class="status" id="settingsInputStatus"></div>
       <textarea id="settingsInput" rows="10" cols="50"></textarea>
-  
+
       <div class="status" id="status"></div>
       <button id="validate">Validate</button>
       <button id="format">Format</button>

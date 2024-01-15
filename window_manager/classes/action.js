@@ -11,13 +11,13 @@ export class Action {
   shortcutId;
 
   static loadAll() {
-    return chrome.storage.sync.get({actions: ''})
+    return chrome.storage.sync.get({actions: '[]'})
       .then(items => items.actions)
-      .then(actions => (actions 
+      .then(actions => (actions
                         ? JSON.parse(actions).map(a => Action.from(a))
                         : []));
   }
-  
+
   static from(json) {
     if (!json.id) {
       console.error(json);
@@ -47,17 +47,23 @@ export class Action {
       case '-internal':
         return displays.find(display => display.isInternal === false);
       default:
-        return displays.find(display => display.name === this.display);
+        // Match by display Name or display ID
+        displays = displays.filter((d) => {
+          return this.display == d.id // this.display is a string, d.id is a number
+              || this.display === d.name
+        });
+        // return first match.
+        return displays.length > 0 ? displays[0] : null;
     }
   }
-  
+
   createUpdate(displays) {
     const display = this.findDisplay(displays);
     if (!display) {
       console.debug(`Display ${this.display} not found`);
-      return {};
+      return null;
     }
-    
+
     const windowsUpdate = {
       state: 'normal',
       focused: true

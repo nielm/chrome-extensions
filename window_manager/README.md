@@ -8,18 +8,19 @@ This page describes options that are available on the options page (`chrome-exte
 
 Action defines how the window should be moved and resized. Following fields are supported:
 
-- `id` - **required**, identifier of the action, used in matchers to reference the action 
+- `id` - **required**, identifier of the action, used in matchers to reference the action
 
 - `display` - **required**, name of display, the action will not be performed if the display of given name doesn't exist.
-  
+
   Available values:
   - `primary` - display defined as primary
   - `-primary` - display that is not primary (if there are multiple non primary displays the first one will be used)
   - `internal` - display defined as internal
   - `-internal` - display that is not internal (if there are multiple non internal displays the first one will be used)
   - `[name of the display]` - name of the display, e.g. `DELL U4021QW`.
-  
-  _Hint: List of displays is printed at the top of the extension options page._
+  - `[id of the display]` - ChromeOS internal display ID (useful when you have multiple displays with the same name);
+
+  _Hint: A List of displays with their names and IDs is printed at the top of the extension options page._
 
 - `shortcutId` - action will be triggered by the shortcut of given id as defined on the shortcuts page (`chrome://extensions/shortcuts`).
 
@@ -32,7 +33,7 @@ Action defines how the window should be moved and resized. Following fields are 
 - `row `- definition of row
 
 - `menuName` - if set, the action will be shown in the popup menu of extension
-  
+
   _Hint: you can use unicode characters in the menu name._
 
 The `row` and `column` objects are defined using `start` and `end` fields. Following values of `start` and `end` are allowed:
@@ -87,7 +88,7 @@ Matchers define which action should be applied on a matched window. Following fi
 - `anyTabUrl` - url as string. The window will be matched if any of its tabs urls matches this string.
 
   _**Default**: any url_
-  
+
 - `minTabsNum` - number of tabs. Window will be matched when it has at least `minTabsNum` tabs opened.
 
   _**Default**: 0_
@@ -174,7 +175,7 @@ Matchers are processed in order of definition. If both internal and non internal
 
 <details>
   <summary>Actions</summary>
-  
+
 ```json
 [
   {
@@ -525,16 +526,6 @@ Matchers are processed in order of definition. If both internal and non internal
       "calculator"
     ],
     "anyTabUrl": "//birnenlabs.com/pwa/calculator/index.html",
-    "windowTypes": [
-      "app"
-    ]
-  },
-  {
-    "actions": [
-      "internal-column2",
-      "ide"
-    ],
-    "anyTabUrl": "//cider-v.corp.google.com",
     "windowTypes": [
       "app"
     ]

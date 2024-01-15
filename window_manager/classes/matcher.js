@@ -7,9 +7,9 @@ export class Matcher {
   actions;
 
   static loadAll() {
-    return chrome.storage.sync.get({matchers: '' })
+    return chrome.storage.sync.get({matchers: '[]' })
       .then(items => items.matchers)
-      .then(matchers => (matchers 
+      .then(matchers => (matchers
                         ? JSON.parse(matchers).map(a => Matcher.from(a))
                         : []));
   }
