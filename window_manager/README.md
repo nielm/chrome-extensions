@@ -8,18 +8,22 @@ This page describes options that are available on the options page (`chrome-exte
 
 Action defines how the window should be moved and resized. Following fields are supported:
 
-- `id` - **required**, identifier of the action, used in matchers to reference the action 
+- `id` - **required**, identifier of the action, used in matchers to reference the action
 
 - `display` - **required**, name of display, the action will not be performed if the display of given name doesn't exist.
-  
+
   Available values:
   - `primary` - display defined as primary
   - `-primary` - display that is not primary (if there are multiple non primary displays the first one will be used)
   - `internal` - display defined as internal
   - `-internal` - display that is not internal (if there are multiple non internal displays the first one will be used)
   - `[name of the display]` - name of the display, e.g. `DELL U4021QW`.
-  
+
   _Hint: List of displays is printed at the top of the extension options page._
+
+- `displayPosition` - the position of the display in the overall desktop with `top` and/or `left` fields. Allows selecting a display from multiple monitors with the same name based on the desktop layout.
+
+  _Hint: The positions of the displays is printed at the top of the extension options page._
 
 - `shortcutId` - action will be triggered by the shortcut of given id as defined on the shortcuts page (`chrome://extensions/shortcuts`).
 
@@ -30,7 +34,7 @@ Action defines how the window should be moved and resized. Following fields are 
 - `row `- definition of row
 
 - `menuName` - if set, the action will be shown in the popup menu of extension
-  
+
   _Hint: you can use unicode characters in the menu name._
 
 The `row` and `column` objects are defined using `start` and `end` fields. Following values of `start` and `end` are allowed:
@@ -85,7 +89,7 @@ Matchers define which action should be applied on a matched window. Following fi
 - `anyTabUrl` - url as string. The window will be matched if any of its tabs urls matches this string.
 
   _**Default**: any url_
-  
+
 - `minTabsNum` - number of tabs. Window will be matched when it has at least `minTabsNum` tabs opened.
 
   _**Default**: 0_
@@ -130,6 +134,34 @@ Since the extension requires JSON knowledge to define the actions and matchers, 
 
 ## FAQ
 
+### How to select multiple displays with the same name?
+
+One option is to specify one as primary, and the other as not primary, but if
+this is not possible, or you have more than 2 displays, use the
+`displayPosition` parameter of the action to specify the position of the
+required display in the overall desktop.
+
+eg:
+
+```json
+[
+  {
+    "id": "external-left @ half-left",
+    "display": "DISPLAYNAME",
+    "displayPosition": {"left": 0},
+    "column": {"start": 0, "end": "50%"},
+    "row": {"start": 0, "end": "100%"}
+  },
+  {
+    "id": "external-right @ half-left",
+    "display": "DISPLAYNAME",
+    "displayPosition": {"left": 2560},
+    "column": {"start": 0, "end": "50%"},
+    "row": {"start": 0, "end": "100%"}
+  }
+]
+```
+
 ### How to use multiple displays with priority?
 Actions are performed in an order of matchers. Let's assume you want to process `github.com` window:
 - on the external display the window should occupy left half of the screen
@@ -172,7 +204,7 @@ Matchers are processed in order of definition. If both internal and non internal
 
 <details>
   <summary>Actions</summary>
-  
+
 ```json
 [
   {
@@ -523,16 +555,6 @@ Matchers are processed in order of definition. If both internal and non internal
       "calculator"
     ],
     "anyTabUrl": "//birnenlabs.com/pwa/calculator/index.html",
-    "windowTypes": [
-      "app"
-    ]
-  },
-  {
-    "actions": [
-      "internal-column2",
-      "ide"
-    ],
-    "anyTabUrl": "//cider-v.corp.google.com",
     "windowTypes": [
       "app"
     ]
