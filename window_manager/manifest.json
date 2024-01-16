@@ -23,6 +23,10 @@
     "default_popup": "popup.html"
   },
   "commands": {
+    "shortcut-0": {
+      "description": "Rearrange all windows",
+      "global": false
+    },
     "shortcut-1": {
       "description": "Shortcut id: 1",
       "global": false
