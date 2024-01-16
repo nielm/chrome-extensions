@@ -23,6 +23,8 @@ Action defines how the window should be moved and resized. Following fields are 
 
 - `shortcutId` - action will be triggered by the shortcut of given id as defined on the shortcuts page (`chrome://extensions/shortcuts`).
 
+  _Hint: The same shortcutId can be used for multiple actions - after pressing shortcut all actions will be applied to matched window. This is also useful for different displays - the same shortcutId can trigger different action on different displays._
+
   _This extension registered 9 shortcuts with an ids from `1` to `9`. Please define the shortcut on the shortcuts page._
 
 - `column` - definition of column
