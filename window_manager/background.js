@@ -2,6 +2,8 @@ import {Action} from './classes/action.js';
 import {Settings} from './classes/settings.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
+let displayChangedTimeoutId = null;
+
 let currentDisplays = "";
 (async () => {
   currentDisplays = await displaysAsString();
@@ -27,18 +29,27 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 chrome.system.display.onDisplayChanged.addListener(async () => {
   const settings = await Settings.load();
+  console.log('onDisplayChanged triggered');
   if (settings.triggerOnMonitorChange) {
+    if (displayChangedTimeoutId) {
+      console.log('Active timer found - cancelled');
+      clearTimeout(displayChangedTimeoutId);
+    }
     // wait one second before doing anything - until the screens are initialised.
-    setTimeout(
+    displayChangedTimeoutId = setTimeout(
       async () => {
+        displayChangedTimeoutId = null;
         // This event is triggered also on unlock, let's check if anything was really changed.
         const displays = await displaysAsString();
         if (currentDisplays != displays) {
+          console.log('Displays changed - updating windows.');
           currentDisplays = displays;
           updateWindows();
+        } else {
+          console.log('Displays not changed');
         }
       },
-      1000
+      settings.triggerOnMonitorChangeTimeout
     );
   }
 });
