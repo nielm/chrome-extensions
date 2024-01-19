@@ -2,7 +2,7 @@ import {Action} from './classes/action.js';
 import {Settings} from './classes/settings.js';
 
 function organiseClick() {
-  chrome.runtime.sendMessage({command: "updateWindows", actionId: null});
+  chrome.runtime.sendMessage({command: 'updateWindows', actionId: null});
 }
 
 async function createActionsMenu() {
@@ -12,14 +12,14 @@ async function createActionsMenu() {
   const displays = await chrome.system.display.getInfo({});
 
   const actions = (await actionsPromise)
-      .filter(action => action.menuName)
-      .filter(action => action.findDisplay(displays)!=null);
+      .filter((action) => action.menuName)
+      .filter((action) => action.findDisplay(displays)!=null);
 
   const actionsEl = document.getElementById('actions');
   for (const action of actions) {
     const actionEl = document.createElement('button');
     actionEl.textContent = action.menuName;
-    actionEl.addEventListener('click', () => chrome.runtime.sendMessage({command: "updateWindows", actionId: action.id}));
+    actionEl.addEventListener('click', () => chrome.runtime.sendMessage({command: 'updateWindows', actionId: action.id}));
     actionsEl.appendChild(actionEl);
   }
 

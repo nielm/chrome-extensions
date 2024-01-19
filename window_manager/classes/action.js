@@ -12,10 +12,10 @@ export class Action {
 
   static loadAll() {
     return chrome.storage.sync.get({actions: '[]'})
-      .then(items => items.actions)
-      .then(actions => (actions
-                        ? JSON.parse(actions).map(a => Action.from(a))
-                        : []));
+        .then((items) => items.actions)
+        .then((actions) => (actions ?
+                        JSON.parse(actions).map((a) => Action.from(a)) :
+                        []));
   }
 
   static from(json) {
@@ -37,21 +37,21 @@ export class Action {
   }
 
   findDisplay(displays) {
-    switch(this.display) {
+    switch (this.display) {
       case 'primary':
-        return displays.find(display => display.isPrimary === true);
+        return displays.find((display) => display.isPrimary === true);
       case '-primary':
-        return displays.find(display => display.isPrimary === false);
+        return displays.find((display) => display.isPrimary === false);
       case 'internal':
-        return displays.find(display => display.isInternal === true);
+        return displays.find((display) => display.isInternal === true);
       case '-internal':
-        return displays.find(display => display.isInternal === false);
+        return displays.find((display) => display.isInternal === false);
       default:
         // Match by display Name or display ID
-        return displays.find(display => (
-            display.name === this.display
-            || display.id == this.display // note this is a number == string comparison
-          ));
+        return displays.find((display) => (
+          display.name === this.display ||
+            display.id == this.display // note this is a number == string comparison
+        ));
     }
   }
 
@@ -64,7 +64,7 @@ export class Action {
 
     const windowsUpdate = {
       state: 'normal',
-      focused: true
+      focused: true,
     };
     if (this.column) {
       const column = this.column.calculate(display.workArea.width);
