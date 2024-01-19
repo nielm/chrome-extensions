@@ -36,22 +36,75 @@ export class Action {
     return Object.assign(new Action(), json);
   }
 
+  /**
+   * Finds the display for this action among the given displays
+   *
+   * @param {chrome.system.display.DisplayUnitInfo[]} displays
+   * @return {?chrome.system.display.DisplayUnitInfo}
+   */
   findDisplay(displays) {
-    switch (this.display) {
+    return Action.findDisplaybyName(this.display, displays);
+  }
+
+  /**
+   * Finds a display among the given displays by name
+   *
+   * @param {string} displayName
+   * @param {chrome.system.display.DisplayUnitInfo[]} displays
+   * @return {?chrome.system.display.DisplayUnitInfo}
+   */
+  static findDisplaybyName(displayName, displays) {
+    let prefixDisplayName=displayName;
+    let displayIndex = 0;
+    // look for a [N] suffix, and split display name into prefix and suffix
+
+    /* regex:
+      ^         start string
+      (.*?)     group $1 - the smallest possible char sequence - the display name
+      \[        literal '['
+      ([0-9]+)  group $2 - sequnce of 1 or more numbers -- the display index
+      \]        literal ']'
+      $         end of string.
+    */
+
+    const matcher = displayName.match(/^(.*?)\[([0-9]+)\]$/);
+    if (matcher) {
+      prefixDisplayName = matcher[1];
+      displayIndex = parseInt(matcher[2]);
+    }
+
+    let filter;
+    switch (prefixDisplayName) {
       case 'primary':
-        return displays.find((display) => display.isPrimary === true);
+        filter = (d) => !!d.isPrimary;
+        break;
       case '-primary':
-        return displays.find((display) => display.isPrimary === false);
+        filter = (d) => !d.isPrimary;
+        break;
       case 'internal':
-        return displays.find((display) => display.isInternal === true);
+        filter = (d) => !!d.isInternal;
+        break;
       case '-internal':
-        return displays.find((display) => display.isInternal === false);
+        filter = (d) => !d.isInternal;
+        break;
       default:
-        // Match by display Name or display ID
-        return displays.find((display) => (
-          display.name === this.display ||
-            display.id == this.display // note this is a number == string comparison
-        ));
+        filter = (d) => (
+          d.name === prefixDisplayName ||
+          d.id == prefixDisplayName // note this is a number == string comparison
+        );
+        break;
+    }
+
+    const matchedDisplays = displays.filter(filter);
+
+    if (matchedDisplays.length === 0 || displayIndex >= matchedDisplays.length) {
+      return null;
+    } else {
+      // Sort displays by position on desktop -> left to right, then top to bottom
+      matchedDisplays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
+      matchedDisplays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
+      console.debug(`matched ${displayName} to `, matchedDisplays[displayIndex]);
+      return matchedDisplays[displayIndex];
     }
   }
 

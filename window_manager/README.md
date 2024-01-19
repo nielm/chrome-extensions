@@ -10,17 +10,30 @@ Action defines how the window should be moved and resized. Following fields are 
 
 - `id` - **required**, identifier of the action, used in matchers to reference the action
 
-- `display` - **required**, name of display, the action will not be performed if the display of given name doesn't exist.
+- `display` - **required**, name of display, the action will not be performed
+if there is no active display matching this name.
 
   Available values:
-  - `primary` - display defined as primary
-  - `-primary` - display that is not primary (if there are multiple non primary displays the first one will be used)
-  - `internal` - display defined as internal
-  - `-internal` - display that is not internal (if there are multiple non internal displays the first one will be used)
+  - `primary` - display defined as primary.
+  - `-primary` - display that is not primary.
+  - `internal` - display defined as internal.
+  - `-internal` - display that is not internal.
   - `[name of the display]` - name of the display, e.g. `DELL U4021QW`.
-  - `[id of the display]` - ChromeOS internal display ID (useful when you have multiple displays with the same name)
+  - `[id of the display]` - ChromeOS internal display ID, e.g. `73492720573986543`.
 
-  _Hint: A List of displays with their names and IDs is printed at the top of the extension options page._
+  If you have multiple displays that match the display name, you can specify the
+  index of the display to used as follows:
+
+  - `-internal[0]` - the first non-internal display
+  - `-internal[1]` - the second non-internal display
+  - `HP Z27n[1]` - the second "HP Z27n" display
+
+  Displays are ordered by their desktop arrangement:
+  from left to right, then from top to bottom. If no index is specified,
+  the first matched (ie leftmost) will be used.
+
+  _Hint: A List of displays with their names, IDs and desktop position in this
+  sort order is shown at the top of the extension options page._
 
 - `shortcutId` - action will be triggered by the shortcut of given id as defined on the shortcuts page (`chrome://extensions/shortcuts`).
 
@@ -128,6 +141,7 @@ Since the extension requires JSON knowledge to define the actions and matchers, 
 - `popupBackgroundColor` - string definition of color of the popup window background that is opened by the left click on the extension (e.g. `"white"`).
 - `popupButtonColor` - string definition of color of the popup window buttons (e.g. `"#f9f9f9"`).
 - `triggerOnMonitorChange` - boolean value - when true, the extension will rearrange all the windows when new monitors are connected or disconnected
+- `triggerOnMonitorChangeTimeout` - number - wait for this many milliseconds before rearranging windows when monitors change (default 1000).
 - `triggerOnWindowCreated` - boolean value - when true, the extension will apply matchers to newly created windows
 
 
