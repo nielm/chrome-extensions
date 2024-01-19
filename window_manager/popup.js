@@ -1,14 +1,20 @@
 import {Action} from './classes/action.js';
 import {Settings} from './classes/settings.js';
-import {updateWindows} from './worker.js';
 
 function organiseClick() {
   chrome.runtime.sendMessage({command: "updateWindows", actionId: null});
 }
 
 async function createActionsMenu() {
-  const actions = (await Action.loadAll()).filter(action => action.menuName);
-  
+  // Only create buttons for actions which have valid displays.
+  const settingsPromise = Settings.load();
+  const actionsPromise = Action.loadAll();
+  const displays = await chrome.system.display.getInfo({});
+
+  const actions = (await actionsPromise)
+      .filter(action => action.menuName)
+      .filter(action => action.findDisplay(displays)!=null);
+
   const actionsEl = document.getElementById('actions');
   for (const action of actions) {
     const actionEl = document.createElement('button');
@@ -17,12 +23,10 @@ async function createActionsMenu() {
     actionsEl.appendChild(actionEl);
   }
 
-  setCss();
+  setCss(await settingsPromise);
 }
 
-async function setCss() {
-  const settings = await Settings.load();
-  
+async function setCss(settings) {
   for (const element of document.querySelectorAll('button')) {
     element.style.backgroundColor = settings.popupButtonColor;
   }
