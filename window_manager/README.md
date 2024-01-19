@@ -18,7 +18,7 @@ Action defines how the window should be moved and resized. Following fields are 
   - `internal` - display defined as internal
   - `-internal` - display that is not internal (if there are multiple non internal displays the first one will be used)
   - `[name of the display]` - name of the display, e.g. `DELL U4021QW`.
-  - `[id of the display]` - ChromeOS internal display ID (useful when you have multiple displays with the same name);
+  - `[id of the display]` - ChromeOS internal display ID (useful when you have multiple displays with the same name)
 
   _Hint: A List of displays with their names and IDs is printed at the top of the extension options page._
 

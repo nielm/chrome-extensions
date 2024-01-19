@@ -30,7 +30,7 @@ async function validateOptions() {
   }
 
   try {
-    matchersObj=JSON.parse(matchers);
+    matchersObj = JSON.parse(matchers);
     document.getElementById('matchersInputStatus').textContent = '';
   } catch (e) {
     document.getElementById('matchersInputStatus').textContent = e.message;
@@ -47,7 +47,7 @@ async function validateOptions() {
 
   // JSON validation completed
   //
-  if (! valid) {
+  if (!valid) {
     setStatus('Invalid JSON');
     return valid;
   }

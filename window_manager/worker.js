@@ -50,6 +50,7 @@ async function updateWindowsFromArray(windows) {
   }
   // Filter out matchers with no (remaining) valid actions
   matchers = matchers.filter((m) => m.actions.length > 0);
+  console.log('Got valid matchers for current displays: ',matchers);
 
   // orderArray[i] will contain all window ids matched by matcher number i
   const orderArray = matchers.map(() => []);
@@ -61,13 +62,14 @@ async function updateWindowsFromArray(windows) {
     const windowUpdate = {};
     for (let i = 0; i < matchers.length; i++) {
       if (matchers[i].matches(window)) {
-        // we have already filtered out invalid/irrelevant actions from the matcher, so take the last action in the list.
-        const actionName = matchers[i].actions.at(-1);
-        console.log(`Matched ${actionName} to window:`, window.tabs[0]?.url, window.tabs);
+        for (const actionName of matchers[i].actions) {
+          // we only have valid actions in the action list.
+          console.log(`Matched ${actionName} to window:`, (window.tabs[0]?.url || window.tabs[0]?.pendingUrl), window.tabs);
 
-        orderArray[i].push(window.id);
-        // merge window updates from tbis action with existing window updates.
-        Object.assign(windowUpdate,actions.get(actionName));
+          orderArray[i].push(window.id);
+          // merge window updates from tbis action with existing window updates.
+          Object.assign(windowUpdate,actions.get(actionName));
+        }
       }
     }
 

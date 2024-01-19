@@ -48,12 +48,10 @@ export class Action {
         return displays.find(display => display.isInternal === false);
       default:
         // Match by display Name or display ID
-        displays = displays.filter((d) => {
-          return this.display == d.id // this.display is a string, d.id is a number
-              || this.display === d.name
-        });
-        // return first match.
-        return displays.length > 0 ? displays[0] : null;
+        return displays.find(display => (
+            display.name === this.display
+            || display.id == this.display // note this is a number == string comparison
+          ));
     }
   }
 
