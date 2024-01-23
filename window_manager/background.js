@@ -10,7 +10,7 @@ let currentDisplays = '';
 })();
 
 async function displaysAsString() {
-  return (await chrome.system.display.getInfo({})).map((display) => display.id).toString();
+  return JSON.stringify(await chrome.system.display.getInfo({}));
 }
 
 chrome.commands.onCommand.addListener(async (command) => {
