@@ -2,7 +2,6 @@ import {Action} from './classes/action.js';
 import {Settings} from './classes/settings.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
-let idleStateActive = true;
 let displayChangedTimeoutId = null;
 
 let currentDisplays = '';
@@ -20,7 +19,11 @@ async function displaysAsString() {
       isPrimary: display.isPrimary,
       isInternal: display.isInternal,
       bounds: display.bounds,
-      workArea: display.workArea,
+      // Ignoring workArea - it is used but its value changes when chromebook
+      // is locked. Ignoring it here means that the extension will not automatically
+      // update windows on shelf position changes but it will not need onIdle checks
+      // which requires longer timeout (onDisplayChange is triggered ~500ms earlier
+      // than onIdleChange).
     })));
 }
 
@@ -52,9 +55,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           displayChangedTimeoutId = null;
           // This event is triggered also on unlock, let's check if anything was really changed.
           const displays = await displaysAsString();
-          if (!idleStateActive) {
-            console.log('Chromebook is not active - ignoring display update event');
-          } else if (currentDisplays != displays) {
+          if (currentDisplays != displays) {
             console.log('Displays changed - updating windows.');
             currentDisplays = displays;
             updateWindows();
@@ -62,13 +63,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
             console.log('Displays not changed');
           }
         },
-        // onStateChanged is triggered much later than onDisplayChanged
-        // According to my tests sometime between 300 and 500ms. Let's
-        // set timeout of 750ms to make sure that we don't update displays
-        // on locked screen - shelf is not visible so the work area is changed
-        // and then changed back when unlocked, which triggeres unnecessary
-        // action.
-        750,
+        200,
     );
   }
 });
@@ -96,8 +91,3 @@ chrome.runtime.onMessage.addListener(
       return false;
     },
 );
-
-chrome.idle.onStateChanged.addListener((newIdleState) => {
-  console.log(`IdleState: ${newIdleState}`);
-  idleStateActive = (newIdleState === 'active');
-});
