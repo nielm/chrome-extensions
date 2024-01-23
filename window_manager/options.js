@@ -1,3 +1,5 @@
+import {Action} from './classes/action.js';
+
 async function saveOptions() {
   const actions = document.getElementById('actionsInput').value;
   const matchers = document.getElementById('matchersInput').value;
@@ -95,28 +97,14 @@ function validateMatchersAndActions(actionsObj, matchersObj) {
  */
 async function warnForIncorrectMonitorIds(actionsObj) {
   const displays = await chrome.system.display.getInfo({});
-
-  const displayNames = new Set(
-      [
-        ...displays.map((d) => d.name),
-        ...displays.map((d) => d.id.toString()),
-      ]);
-  displayNames.add('primary');
-  if ( displays.filter((d) => d.isPrimary===false).length>0) {
-    displayNames.add('-primary');
-  };
-  if ( displays.filter((d) => d.isInternal).length>0) {
-    displayNames.add('internal');
-  };
-  if ( displays.filter((d) => d.isInternal===false).length>0) {
-    displayNames.add('-internal');
-  };
-
   const actionDisplayNames = new Set(actionsObj.map((a) => a.display));
 
-  const missingDisplayNames = [...actionDisplayNames.values()].filter((d) => !displayNames.has(d));
+  const missingDisplayNames = [...actionDisplayNames.values()]
+      .filter((d) => Action.findDisplayByName(d, displays)===null);
+
   if (missingDisplayNames.length>0) {
-    document.getElementById('actionsInputStatus').textContent = `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingDisplayNames, null, 2)}`;
+    document.getElementById('actionsInputStatus').textContent =
+        `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingDisplayNames, null, 2)}`;
     return false;
   }
   return true;
