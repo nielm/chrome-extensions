@@ -19,11 +19,6 @@ async function displaysAsString() {
       isPrimary: display.isPrimary,
       isInternal: display.isInternal,
       workArea: display.workArea,
-      // Ignoring workArea - it is used but its value changes when chromebook
-      // is locked. Ignoring it here means that the extension will not automatically
-      // update windows on shelf position changes but it will not need onIdle checks
-      // which requires longer timeout (onDisplayChange is triggered ~500ms earlier
-      // than onIdleChange).
     })));
 }
 
