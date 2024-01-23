@@ -2,6 +2,7 @@ import {Action} from './classes/action.js';
 import {Settings} from './classes/settings.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
+let idleStateActive = true;
 let displayChangedTimeoutId = null;
 
 let currentDisplays = '';
@@ -13,7 +14,7 @@ async function displaysAsString() {
   const displays = await chrome.system.display.getInfo({});
   return JSON.stringify(displays.map((display) => (
     {
-      // filter to return all the properties that we use to arrange windows
+      // return all the properties that we use to arrange windows
       id: display.id,
       name: display.name,
       isPrimary: display.isPrimary,
@@ -51,7 +52,9 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           displayChangedTimeoutId = null;
           // This event is triggered also on unlock, let's check if anything was really changed.
           const displays = await displaysAsString();
-          if (currentDisplays != displays) {
+          if (!idleStateActive) {
+            console.log('Chromebook is not active - ignoring display update event');
+          } else if (currentDisplays != displays) {
             console.log('Displays changed - updating windows.');
             currentDisplays = displays;
             updateWindows();
@@ -59,7 +62,13 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
             console.log('Displays not changed');
           }
         },
-        300,
+        // onStateChanged is triggered much later than onDisplayChanged
+        // According to my tests sometime between 300 and 500ms. Let's
+        // set timeout of 750ms to make sure that we don't update displays
+        // on locked screen - shelf is not visible so the work area is changed
+        // and then changed back when unlocked, which triggeres unnecessary
+        // action.
+        750,
     );
   }
 });
@@ -88,3 +97,7 @@ chrome.runtime.onMessage.addListener(
     },
 );
 
+chrome.idle.onStateChanged.addListener((newIdleState) => {
+  console.log(`IdleState: ${newIdleState}`);
+  idleStateActive = (newIdleState === 'active');
+});
