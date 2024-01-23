@@ -10,7 +10,16 @@ let currentDisplays = '';
 })();
 
 async function displaysAsString() {
-  return JSON.stringify(await chrome.system.display.getInfo({}));
+  return JSON.stringify(displays.map((display) => (
+    { 
+     // filter to return all the properties that we use to arrange windows
+      id: display.id,
+      name: display.name,
+      isPrimary: display.isPrimary,
+      isInternal: display.isInternal,
+      bounds: display.bounds,
+      workArea: display.workArea,
+    })));
 }
 
 chrome.commands.onCommand.addListener(async (command) => {
@@ -35,7 +44,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
       console.log('Active timer found - cancelled');
       clearTimeout(displayChangedTimeoutId);
     }
-    // wait one second before doing anything - until the screens are initialised.
+    // wait a moment before doing anything - when display is created onDisplayChanged is triggered multiple times, this will consider the last change only.
     displayChangedTimeoutId = setTimeout(
         async () => {
           displayChangedTimeoutId = null;
@@ -49,7 +58,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
             console.log('Displays not changed');
           }
         },
-        settings.triggerOnMonitorChangeTimeout,
+        300,
     );
   }
 });

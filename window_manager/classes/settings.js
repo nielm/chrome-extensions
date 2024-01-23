@@ -2,7 +2,6 @@ export class Settings {
   popupButtonColor = 'f9f9f9';
   popupBackgroundColor = 'white';
   triggerOnMonitorChange = false;
-  triggerOnMonitorChangeTimeout = 1000;
   triggerOnWindowCreated = false;
 
   static load() {
