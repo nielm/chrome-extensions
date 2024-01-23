@@ -18,7 +18,7 @@ async function displaysAsString() {
       name: display.name,
       isPrimary: display.isPrimary,
       isInternal: display.isInternal,
-      bounds: display.bounds,
+      workArea: display.workArea,
       // Ignoring workArea - it is used but its value changes when chromebook
       // is locked. Ignoring it here means that the extension will not automatically
       // update windows on shelf position changes but it will not need onIdle checks
@@ -43,10 +43,9 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 chrome.system.display.onDisplayChanged.addListener(async () => {
   const settings = await Settings.load();
-  console.log('onDisplayChanged triggered');
   if (settings.triggerOnMonitorChange) {
     if (displayChangedTimeoutId) {
-      console.log('Active timer found - cancelled');
+      console.log('onDisplayChanged: active timer found - cancelled');
       clearTimeout(displayChangedTimeoutId);
     }
     // wait a moment before doing anything - when display is created onDisplayChanged is triggered multiple times, this will consider the last change only.
@@ -54,13 +53,16 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
         async () => {
           displayChangedTimeoutId = null;
           // This event is triggered also on unlock, let's check if anything was really changed.
+          const idleStatePromise = chrome.idle.queryState(15);
           const displays = await displaysAsString();
-          if (currentDisplays != displays) {
+          if ((await idleStatePromise) == 'locked') {
+            console.log('onDisplayChanged: not updating - locked');
+          } else if (currentDisplays != displays) {
             console.log('Displays changed - updating windows.');
             currentDisplays = displays;
             updateWindows();
           } else {
-            console.log('Displays not changed');
+            console.log('onDisplayChanged: not updating - displays not changed');
           }
         },
         200,
