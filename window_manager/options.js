@@ -100,7 +100,7 @@ async function warnForIncorrectMonitorIds(actionsObj) {
   const actionDisplayNames = new Set(actionsObj.map((a) => a.display));
 
   const missingDisplayNames = [...actionDisplayNames.values()]
-      .filter((d) => Action.findDisplaybyName(d, displays)===null);
+      .filter((d) => Action.findDisplayByName(d, displays)===null);
 
   if (missingDisplayNames.length>0) {
     document.getElementById('actionsInputStatus').textContent =

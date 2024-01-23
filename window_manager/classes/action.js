@@ -43,7 +43,7 @@ export class Action {
    * @return {?chrome.system.display.DisplayUnitInfo}
    */
   findDisplay(displays) {
-    return Action.findDisplaybyName(this.display, displays);
+    return Action.findDisplayByName(this.display, displays);
   }
 
   /**
@@ -53,7 +53,7 @@ export class Action {
    * @param {chrome.system.display.DisplayUnitInfo[]} displays
    * @return {?chrome.system.display.DisplayUnitInfo}
    */
-  static findDisplaybyName(displayName, displays) {
+  static findDisplayByName(displayName, displays) {
     let prefixDisplayName=displayName;
     let displayIndex = 0;
     // look for a [N] suffix, and split display name into prefix and suffix
