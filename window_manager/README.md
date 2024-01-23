@@ -141,7 +141,6 @@ Since the extension requires JSON knowledge to define the actions and matchers, 
 - `popupBackgroundColor` - string definition of color of the popup window background that is opened by the left click on the extension (e.g. `"white"`).
 - `popupButtonColor` - string definition of color of the popup window buttons (e.g. `"#f9f9f9"`).
 - `triggerOnMonitorChange` - boolean value - when true, the extension will rearrange all the windows when new monitors are connected or disconnected
-- `triggerOnMonitorChangeTimeout` - number - wait for this many milliseconds before rearranging windows when monitors change (default 1000).
 - `triggerOnWindowCreated` - boolean value - when true, the extension will apply matchers to newly created windows
 
 
