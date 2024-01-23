@@ -10,6 +10,7 @@ let currentDisplays = '';
 })();
 
 async function displaysAsString() {
+  const displays = await chrome.system.display.getInfo({});
   return JSON.stringify(displays.map((display) => (
     {
       // filter to return all the properties that we use to arrange windows
