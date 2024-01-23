@@ -4,5 +4,5 @@ function onTabUpdated(tabId, changeInfo, tab) {
   }
 }
 
-chrome.tabs.onUpdated.addListener(onTabUpdated)
+chrome.tabs.onUpdated.addListener(onTabUpdated);
 

@@ -7,14 +7,14 @@ export class Matcher {
   actions;
 
   static loadAll() {
-    return chrome.storage.sync.get({matchers: '[]' })
-      .then(items => items.matchers)
-      .then(matchers => (matchers
-                        ? JSON.parse(matchers).map(a => Matcher.from(a))
-                        : []));
+    return chrome.storage.sync.get({matchers: '[]'})
+        .then((items) => items.matchers)
+        .then((matchers) => (matchers ?
+                        JSON.parse(matchers).map((a) => Matcher.from(a)) :
+                        []));
   }
 
-  static from(json){
+  static from(json) {
     if (!json.actions) {
       console.error(json);
       throw new Error('action for matcher not defined');
@@ -27,8 +27,8 @@ export class Matcher {
       // console.log('Not matched: windowsType');
       return false;
     }
-    if (this.anyTabUrl
-        && !window.tabs.some(tab => ((tab.url || tab.pendingUrl).toLowerCase().includes(this.anyTabUrl.toLowerCase())))) {
+    if (this.anyTabUrl &&
+        !window.tabs.some((tab) => ((tab.url || tab.pendingUrl).toLowerCase().includes(this.anyTabUrl.toLowerCase())))) {
       // console.log('Not matched: anyTabUrl');
       return false;
     }

@@ -1,5 +1,5 @@
 import {Action} from './classes/action.js';
-import {Matcher} from './classes/matcher.js'
+import {Matcher} from './classes/matcher.js';
 
 const UPDATE_TIMEOUT_MS = 5;
 
@@ -11,20 +11,20 @@ export async function updateWindowWithActions(actions) {
   const windowUpdate = {};
   // merge actions - createUpdate only returns values for actions with valid displays.
   for (const action of actions) {
-    Object.assign(windowUpdate,action.createUpdate(await displayPromise));
+    Object.assign(windowUpdate, action.createUpdate(await displayPromise));
   }
-  if(Object.keys(windowUpdate).length > 0 ) {
+  if (Object.keys(windowUpdate).length > 0 ) {
     chrome.windows.update((await windowPromise).id, windowUpdate);
   }
 }
 
 // Applies all matched actions to the specified windowId
 export async function updateWindowWithMatchedActions(windowId) {
-  updateWindowsFromArray((await chrome.windows.getAll({populate : true})).filter(window => window.id === windowId));
+  updateWindowsFromArray((await chrome.windows.getAll({populate: true})).filter((window) => window.id === windowId));
 }
 
 export async function updateWindows() {
-  updateWindowsFromArray(await chrome.windows.getAll({populate : true}));
+  updateWindowsFromArray(await chrome.windows.getAll({populate: true}));
 }
 
 async function updateWindowsFromArray(windows) {
@@ -36,11 +36,11 @@ async function updateWindowsFromArray(windows) {
 
   // create a map of action name -> windowUpdate object for only actions valid for the current set of displays:
   const actions = new Map(
-    (await actionsPromise)
-      .map(a => [a.id, a.createUpdate(displays)])
+      (await actionsPromise)
+          .map((a) => [a.id, a.createUpdate(displays)])
       // createUpdate returns null when no matching display.
-      .filter((pair) => pair[1] != null ));
-  console.log('Got valid actions for current displays: ',[...actions.keys()]);
+          .filter((pair) => pair[1] != null ));
+  console.log('Got valid actions for current displays: ', [...actions.keys()]);
 
   let matchers = await matchersPromise;
 
@@ -50,14 +50,14 @@ async function updateWindowsFromArray(windows) {
   }
   // Filter out matchers with no (remaining) valid actions
   matchers = matchers.filter((m) => m.actions.length > 0);
-  console.log('Got valid matchers for current displays: ',matchers);
+  console.log('Got valid matchers for current displays: ', matchers);
 
   // orderArray[i] will contain all window ids matched by matcher number i
   const orderArray = matchers.map(() => []);
   // actionMap will contain action (windowUpdate object) and use window id as key.
   const windowUpdateMap = new Map();
 
-  var timeout = 0;
+  let timeout = 0;
   for (const window of windows) {
     const windowUpdate = {};
     for (let i = 0; i < matchers.length; i++) {
@@ -68,7 +68,7 @@ async function updateWindowsFromArray(windows) {
 
           orderArray[i].push(window.id);
           // merge window updates from tbis action with existing window updates.
-          Object.assign(windowUpdate,actions.get(actionName));
+          Object.assign(windowUpdate, actions.get(actionName));
         }
       }
     }
@@ -89,9 +89,9 @@ async function updateWindowsFromArray(windows) {
       throw Error(`Action undefined, id: ${windowsId}. This is bug in the code.`);
     }
     setTimeout(chrome.windows.update,
-               timeout++ * UPDATE_TIMEOUT_MS,
-               windowId,
-               windowUpdateMap.get(windowId));
+        timeout++ * UPDATE_TIMEOUT_MS,
+        windowId,
+        windowUpdateMap.get(windowId));
     windowUpdateMap.delete(windowId);
   }
   if (windowUpdateMap.size != 0) {
@@ -99,9 +99,5 @@ async function updateWindowsFromArray(windows) {
     throw Error(`Map size expected to be 0 after updates, actual: ${windowUpdateMap.size}. This is bug in the code.`);
   }
 }
-
-
-
-
 
 

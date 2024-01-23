@@ -1,0 +1,13 @@
+{
+  "name": "chrome-extensions",
+  "version": "1.0.0",
+  "description": "Chrome extensions",
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-google": "^0.14.0"
+  },
+  "scripts": {
+    "eslint": "npx eslint **/*.js",
+    "eslint-fix": "npx eslint --fix **/*.js"
+  }
+}

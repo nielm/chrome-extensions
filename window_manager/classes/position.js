@@ -12,8 +12,8 @@ export class Position {
   //   - returned start and end are guarantted to be in [0, size] range
   //   - size is used to calculate percentages
   calculate(size) {
-    var start = this.maybeValuePercent(this.start, size);
-    var end = this.maybeValuePercent(this.end, size);
+    let start = this.maybeValuePercent(this.start, size);
+    let end = this.maybeValuePercent(this.end, size);
 
     if (isNaN(start)) {
       start = this.getValueNumber(this.start, size);
@@ -41,14 +41,14 @@ export class Position {
     }
     return Math.floor(size * percent / 100);
   }
-  
+
   getValueNumber(value, size) {
     if (typeof value !== 'number') {
       throw new Error(`Value ${value} should be string or a number.`);
     }
     // treat negative values as calculated from the end.
-    return value < 0
-      ? Math.max(0, size + value)
-      : Math.min(size, value);
+    return value < 0 ?
+      Math.max(0, size + value) :
+      Math.min(size, value);
   }
 }
