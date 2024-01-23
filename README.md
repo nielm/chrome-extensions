@@ -17,6 +17,22 @@ cd chrome-extensions
 git remote set-url origin git+ssh://git@github.com/birnenlabs/chrome-extensions
 ```
 
+### eslint
+#### installs eslint runtime in the repo root directory
+```shell
+npm install 
+```
+
+#### Check for linting errors
+```shell
+npm run eslint
+```
+
+#### Fix all auto-fixable linting errors
+```shell
+npm run eslint-fix
+```
+
 ### Testing
 
 ```shell
