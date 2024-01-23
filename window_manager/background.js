@@ -11,8 +11,8 @@ let currentDisplays = '';
 
 async function displaysAsString() {
   return JSON.stringify(displays.map((display) => (
-    { 
-     // filter to return all the properties that we use to arrange windows
+    {
+      // filter to return all the properties that we use to arrange windows
       id: display.id,
       name: display.name,
       isPrimary: display.isPrimary,
