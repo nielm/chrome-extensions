@@ -63,7 +63,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: not updating - displays not changed`);
           }
         },
-        200,
+        300,
     );
   }
 });
