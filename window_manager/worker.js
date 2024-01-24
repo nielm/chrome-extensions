@@ -34,6 +34,8 @@ async function updateWindowsFromArray(windows) {
 
   const displays = await displaysPromise;
 
+  console.groupCollapsed(`${new Date().toLocaleTimeString()} updateWindowsFromArray`);
+
   // create a map of action name -> windowUpdate object for only actions valid for the current set of displays:
   const actions = new Map(
       (await actionsPromise)
@@ -94,10 +96,14 @@ async function updateWindowsFromArray(windows) {
         windowUpdateMap.get(windowId));
     windowUpdateMap.delete(windowId);
   }
+
   if (windowUpdateMap.size != 0) {
     // windowIds are added in the same if clause - all of them should be in the map.
     throw Error(`Map size expected to be 0 after updates, actual: ${windowUpdateMap.size}. This is bug in the code.`);
   }
+
+  // Finalize logging after all windows are updated.
+  setTimeout(console.groupEnd, timeout * UPDATE_TIMEOUT_MS);
 }
 
 

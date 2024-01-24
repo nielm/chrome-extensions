@@ -40,7 +40,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
   const settings = await Settings.load();
   if (settings.triggerOnMonitorChange) {
     if (displayChangedTimeoutId) {
-      console.log('onDisplayChanged: active timer found - cancelled');
+      console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: active timer found - cancelled`);
       clearTimeout(displayChangedTimeoutId);
     }
     // wait a moment before doing anything - when display is created onDisplayChanged is triggered multiple times, this will consider the last change only.
@@ -51,13 +51,16 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           const idleStatePromise = chrome.idle.queryState(15);
           const displays = await displaysAsString();
           if ((await idleStatePromise) == 'locked') {
-            console.log('onDisplayChanged: not updating - locked');
+            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: not updating - locked`);
           } else if (currentDisplays != displays) {
-            console.log('Displays changed - updating windows.');
+            console.groupCollapsed(`${new Date().toLocaleTimeString()} onDisplayChanged: updating windows.`);
+            console.log(`Old displays: ${currentDisplays}`);
+            console.log(`New displays: ${displays}`);
+            console.groupEnd();
             currentDisplays = displays;
             updateWindows();
           } else {
-            console.log('onDisplayChanged: not updating - displays not changed');
+            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: not updating - displays not changed`);
           }
         },
         200,
