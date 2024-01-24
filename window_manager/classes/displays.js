@@ -1,5 +1,4 @@
 export class Displays {
-
   static async init() {
     console.group(`${new Date().toLocaleTimeString()} Displays: init`);
     const currentDisplays = await Displays.#getSavedDisplays();
@@ -61,29 +60,29 @@ export class Displays {
   // When storage is empty defaultValue displays will be saved and returned
   // When defaultValue is not provided current displays will be used.
   static async #getSavedDisplays(defaultValue = undefined) {
-    const savedDisplays = await chrome.storage.session.get({displayData : ''})
-      .then((item) => item.displayData);
-    console.log(`${new Date().toLocaleTimeString()} Loaded: ${JSON.stringify(savedDisplays || '<null>')}`)
+    const savedDisplays = await chrome.storage.session.get({displayData: ''})
+        .then((item) => item.displayData);
+    console.log(`${new Date().toLocaleTimeString()} Loaded: ${JSON.stringify(savedDisplays || '<null>')}`);
     return savedDisplays || await Displays.#setSavedDisplays(defaultValue || await Displays.#getCurrentDisplays());
   }
 
   // Saves current or provided displays to the storage
   static async #setSavedDisplays(displays) {
-    await chrome.storage.session.set({ displayData: displays });
+    await chrome.storage.session.set({displayData: displays});
     console.log(`${new Date().toLocaleTimeString()} Saved:  ${JSON.stringify(displays)}`);
     return displays;
   }
 
   static #getCurrentDisplays() {
-  return chrome.system.display.getInfo({})
-    .then((displays) => 
-        (displays.map((display) => {
-          const strippedDisplay = Displays.#mapImportantFields(display);
-          strippedDisplay.bounds = display.bounds;
-          strippedDisplay.workArea = display.workArea;
-           return strippedDisplay;
-         }
-      )));
+    return chrome.system.display.getInfo({})
+        .then((displays) =>
+          (displays.map((display) => {
+            const strippedDisplay = Displays.#mapImportantFields(display);
+            strippedDisplay.bounds = display.bounds;
+            strippedDisplay.workArea = display.workArea;
+            return strippedDisplay;
+          },
+          )));
   }
 
   // Returns display fields that identifies monitors
@@ -98,9 +97,9 @@ export class Displays {
   }
 
   static #areDisplaySizesEqual(d1, d2) {
-    return d1.height == d2.height
-      && d1.left == d2.left
-      && d1.top == d2.top
-      && d1.width == d2.width;
+    return d1.height == d2.height &&
+      d1.left == d2.left &&
+      d1.top == d2.top &&
+      d1.width == d2.width;
   }
 }

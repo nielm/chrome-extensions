@@ -7,7 +7,7 @@
     "eslint-config-google": "^0.14.0"
   },
   "scripts": {
-    "eslint": "npx eslint **/*.js",
-    "eslint-fix": "npx eslint --fix **/*.js"
+    "eslint": "npx eslint '**/*.js'",
+    "eslint-fix": "npx eslint --fix '**/*.js'"
   }
 }
