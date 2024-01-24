@@ -1,26 +1,14 @@
 import {Action} from './classes/action.js';
+import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
 let displayChangedTimeoutId = null;
 
-let currentDisplays = '';
+// Initialize session storage
 (async () => {
-  currentDisplays = await displaysAsString();
+  await Displays.init();
 })();
-
-async function displaysAsString() {
-  const displays = await chrome.system.display.getInfo({});
-  return JSON.stringify(displays.map((display) => (
-    {
-      // return all the properties that we use to arrange windows
-      id: display.id,
-      name: display.name,
-      isPrimary: display.isPrimary,
-      isInternal: display.isInternal,
-      workArea: display.workArea,
-    })));
-}
 
 chrome.commands.onCommand.addListener(async (command) => {
   const shortcutId = parseInt(command.charAt(command.length - 1));
@@ -40,30 +28,23 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
   const settings = await Settings.load();
   if (settings.triggerOnMonitorChange) {
     if (displayChangedTimeoutId) {
-      console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: active timer found - cancelled`);
       clearTimeout(displayChangedTimeoutId);
+      console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: setting timer (previous timer cancelled)`);
+    } else {
+      console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: setting timer`);
     }
     // wait a moment before doing anything - when display is created onDisplayChanged is triggered multiple times, this will consider the last change only.
     displayChangedTimeoutId = setTimeout(
         async () => {
           displayChangedTimeoutId = null;
-          // This event is triggered also on unlock, let's check if anything was really changed.
-          const idleStatePromise = chrome.idle.queryState(15);
-          const displays = await displaysAsString();
-          if ((await idleStatePromise) == 'locked') {
-            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: not updating - locked`);
-          } else if (currentDisplays != displays) {
-            console.groupCollapsed(`${new Date().toLocaleTimeString()} onDisplayChanged: updating windows.`);
-            console.log(`Old displays: ${currentDisplays}`);
-            console.log(`New displays: ${displays}`);
-            console.groupEnd();
-            currentDisplays = displays;
+          if (await Displays.displaysChanged()) {
+            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: display change detected, updating`);
             updateWindows();
           } else {
-            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: not updating - displays not changed`);
+            console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: displays change not detected`);
           }
         },
-        300,
+        200,
     );
   }
 });

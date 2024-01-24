@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "JSON Window Manager",
   "description": "This extension is created for Chrome OS. It arranges chrome windows according to rules defined by the user in json settings.",
-  "version": "1.09",
+  "version": "1.10",
   "icons": {
     "16": "16.png",
     "64": "64.png",
