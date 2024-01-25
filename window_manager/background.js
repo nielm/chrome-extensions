@@ -10,17 +10,27 @@ let displayChangedTimeoutId = null;
   await Displays.init();
 })();
 
-chrome.commands.onCommand.addListener(async (command) => {
-  const shortcutId = parseInt(command.charAt(command.length - 1));
-  if (shortcutId < 0 || shortcutId > 9) {
-    throw new Error(`Invalid command: ${command} - expected id between 0 and 9.`);
-  }
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  const commandIdPrefix = "zzz-shortcut-";
 
-  if (shortcutId == 0) {
+  if (command === "all-windows-shortcut") {
     updateWindows();
-  } else {
+  } else if (command === "focused-window-shortcut") {
+    if (tab) {
+      updateWindowWithMatchedActions(tab.windowId);
+    } else {
+      console.log("focused-window-shortcut triggered but tab is not defined.");
+    }
+  } else if (command.startsWith(commandIdPrefix)) {
+    const shortcutId = parseInt(command.slice(commandIdPrefix.length));
+    if (isNaN(shortcutId)) {
+      throw new Error(`Invalid command: ${command} - expected ${commandIdPrefix}##`);
+    }
+    console.log(`Shortcut: ${shortcutId}`);
     const actionsPromise = (await Action.loadAll()).filter((action) => action.shortcutId == shortcutId);
     updateWindowWithActions(await actionsPromise);
+  } else {
+    console.log(`Invalid command: ${command}`);
   }
 });
 

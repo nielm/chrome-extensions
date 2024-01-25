@@ -24,44 +24,60 @@
     "default_popup": "popup.html"
   },
   "commands": {
-    "shortcut-0": {
-      "description": "Rearrange all windows",
+    "all-windows-shortcut": {
+      "description": "Apply all matching rules to all windows.",
       "global": false
     },
-    "shortcut-1": {
+    "focused-window-shortcut": {
+      "description": "Apply all matching rules to the focused window.",
+      "global": false
+    },
+    "zzz-shortcut-01": {
       "description": "Shortcut id: 1",
       "global": false
     },
-    "shortcut-2": {
+    "zzz-shortcut-02": {
       "description": "Shortcut id: 2",
       "global": false
     },
-    "shortcut-3": {
+    "zzz-shortcut-03": {
       "description": "Shortcut id: 3",
       "global": false
     },
-    "shortcut-4": {
+    "zzz-shortcut-04": {
       "description": "Shortcut id: 4",
       "global": false
     },
-    "shortcut-5": {
+    "zzz-shortcut-05": {
       "description": "Shortcut id: 5",
       "global": false
     },
-    "shortcut-6": {
+    "zzz-shortcut-06": {
       "description": "Shortcut id: 6",
       "global": false
     },
-    "shortcut-7": {
+    "zzz-shortcut-07": {
       "description": "Shortcut id: 7",
       "global": false
     },
-    "shortcut-8": {
+    "zzz-shortcut-08": {
       "description": "Shortcut id: 8",
       "global": false
     },
-    "shortcut-9": {
+    "zzz-shortcut-09": {
       "description": "Shortcut id: 9",
+      "global": false
+    },
+    "zzz-shortcut-10": {
+      "description": "Shortcut id: 10",
+      "global": false
+    },
+    "zzz-shortcut-11": {
+      "description": "Shortcut id: 11",
+      "global": false
+    },
+    "zzz-shortcut-12": {
+      "description": "Shortcut id: 12",
       "global": false
     }
   }
