@@ -39,7 +39,7 @@ if there is no active display matching this name.
 
   _Hint: The same shortcutId can be used for multiple actions - after pressing shortcut all actions will be applied to matched window. This is also useful for different displays - the same shortcutId can trigger different action on different displays._
 
-  _This extension registered 9 shortcuts with an ids from `1` to `9`. Please define the shortcut on the shortcuts page._
+  _This extension registered shortcuts with an ids starting from `1`. Please define the shortcut on the shortcuts page._
 
 - `column` - definition of column
 

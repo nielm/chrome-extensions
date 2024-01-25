@@ -26,7 +26,6 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     if (isNaN(shortcutId)) {
       throw new Error(`Invalid command: ${command} - expected ${commandIdPrefix}##`);
     }
-    console.log(`Shortcut: ${shortcutId}`);
     const actionsPromise = (await Action.loadAll()).filter((action) => action.shortcutId == shortcutId);
     updateWindowWithActions(await actionsPromise);
   } else {
