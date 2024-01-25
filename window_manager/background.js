@@ -22,7 +22,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
       console.log("focused-window-shortcut triggered but tab is not defined.");
     }
   } else if (command.startsWith(commandIdPrefix)) {
-    const shortcutId = parseInt(command.slice(commandIdPrefix.length));
+    const shortcutId = parseInt(command.slice(commandIdPrefix.length), 10);
     if (isNaN(shortcutId)) {
       throw new Error(`Invalid command: ${command} - expected ${commandIdPrefix}##`);
     }
