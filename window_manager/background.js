@@ -3,6 +3,8 @@ import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
+const ACTION_START_TIMEOUT_MS = 200;
+
 let displayChangedTimeoutId = null;
 
 // Initialize session storage
@@ -53,7 +55,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: displays change not detected`);
           }
         },
-        200,
+        ACTION_START_TIMEOUT_MS,
     );
   }
 });
@@ -61,7 +63,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
 chrome.windows.onCreated.addListener(async (window) => {
   const settings = await Settings.load();
   if (settings.triggerOnWindowCreated) {
-    updateWindowWithMatchedActions(window.id);
+    setTimeout(updateWindowWithMatchedActions, ACTION_START_TIMEOUT_MS, window.id);
   }
 });
 
