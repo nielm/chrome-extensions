@@ -1,4 +1,5 @@
 import {Action} from './classes/action.js';
+import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 
 function organiseClick() {
@@ -9,7 +10,7 @@ async function createActionsMenu() {
   // Only create buttons for actions which have valid displays.
   const settingsPromise = Settings.load();
   const actionsPromise = Action.loadAll();
-  const displays = await chrome.system.display.getInfo({});
+  const displays = await Displays.getDisplays();
 
   const actions = (await actionsPromise)
       .filter((action) => action.menuName)

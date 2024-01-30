@@ -1,3 +1,25 @@
+export class Display {
+  id;
+  name;
+  isPrimary;
+  isInternal;
+  bounds;
+  workArea;
+  resolution;
+
+  constructor(display) {
+    this.id = display.id;
+    this.name = display.name,
+    this.isPrimary = display.isPrimary,
+    this.isInternal = display.isInternal;
+    this.bounds = display.bounds;
+    this.workArea = display.workArea;
+
+    const nativeMode = display.modes.find(m => m.isNative);
+    this.resolution = `${nativeMode.width}x${nativeMode.height}`;
+  }
+}
+
 export class Displays {
   static async init() {
     console.group(`${new Date().toLocaleTimeString()} Displays: init`);
@@ -8,7 +30,7 @@ export class Displays {
 
   // Returns true if the displays were changed since the last check.
   static async displaysChanged() {
-    const currentDisplaysPromise = Displays.#getCurrentDisplays();
+    const currentDisplaysPromise = Displays.getDisplays();
     const savedDisplays = await Displays.#getSavedDisplays();
     const currentDisplays = await currentDisplaysPromise;
 
@@ -55,6 +77,10 @@ export class Displays {
     }
   }
 
+  // Returns list of attached displays.
+  static async getDisplays() {
+    return chrome.system.display.getInfo({}).then((displays) => (displays.map((d) => new Display(d))));
+  }
 
   // Returns saved displays from the storage.
   // When storage is empty defaultValue displays will be saved and returned
@@ -63,7 +89,7 @@ export class Displays {
     const savedDisplays = await chrome.storage.session.get({displayData: ''})
         .then((item) => item.displayData);
     console.log(`${new Date().toLocaleTimeString()} Loaded: ${JSON.stringify(savedDisplays || '<null>')}`);
-    return savedDisplays || await Displays.#setSavedDisplays(defaultValue || await Displays.#getCurrentDisplays());
+    return savedDisplays || await Displays.#setSavedDisplays(defaultValue || await Displays.getDisplays());
   }
 
   // Saves current or provided displays to the storage
@@ -73,22 +99,9 @@ export class Displays {
     return displays;
   }
 
-  static #getCurrentDisplays() {
-    return chrome.system.display.getInfo({})
-        .then((displays) =>
-          (displays.map((display) => {
-            const strippedDisplay = Displays.#mapImportantFields(display);
-            strippedDisplay.bounds = display.bounds;
-            strippedDisplay.workArea = display.workArea;
-            return strippedDisplay;
-          },
-          )));
-  }
-
   // Returns display fields that identifies monitors
   static #mapImportantFields(display) {
     return {
-      // return all the properties that we use to arrange windows
       id: display.id,
       name: display.name,
       isPrimary: display.isPrimary,

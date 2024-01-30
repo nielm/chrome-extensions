@@ -39,8 +39,8 @@ export class Action {
   /**
    * Finds the display for this action among the given displays
    *
-   * @param {chrome.system.display.DisplayUnitInfo[]} displays
-   * @return {?chrome.system.display.DisplayUnitInfo}
+   * @param {Display} displays
+   * @return {?Display}
    */
   findDisplay(displays) {
     return Action.findDisplayByName(this.display, displays);
@@ -50,8 +50,8 @@ export class Action {
    * Finds a display among the given displays by name
    *
    * @param {string} displayName
-   * @param {chrome.system.display.DisplayUnitInfo[]} displays
-   * @return {?chrome.system.display.DisplayUnitInfo}
+   * @param {Display} displays
+   * @return {?Display}
    */
   static findDisplayByName(displayName, displays) {
     let prefixDisplayName=displayName;

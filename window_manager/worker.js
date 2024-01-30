@@ -1,4 +1,5 @@
 import {Action} from './classes/action.js';
+import {Displays} from './classes/displays.js';
 import {Matcher} from './classes/matcher.js';
 
 const UPDATE_TIMEOUT_MS = 5;
@@ -6,7 +7,7 @@ const UPDATE_TIMEOUT_MS = 5;
 // Applies specified actions to the focused window
 export async function updateWindowWithActions(actions) {
   const windowPromise = chrome.windows.getLastFocused();
-  const displayPromise = chrome.system.display.getInfo({});
+  const displayPromise = Displays.getDisplays();
 
   const windowUpdate = {};
   // merge actions - createUpdate only returns values for actions with valid displays.
@@ -28,7 +29,7 @@ export async function updateWindows() {
 }
 
 async function updateWindowsFromArray(windows) {
-  const displaysPromise = chrome.system.display.getInfo({});
+  const displaysPromise = Displays.getDisplays();
   const actionsPromise = Action.loadAll();
   const matchersPromise = Matcher.loadAll();
 

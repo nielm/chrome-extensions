@@ -1,4 +1,5 @@
 import {Action} from './classes/action.js';
+import {Displays} from './classes/displays.js';
 
 async function saveOptions() {
   const actions = document.getElementById('actionsInput').value;
@@ -96,7 +97,7 @@ function validateMatchersAndActions(actionsObj, matchersObj) {
  * @return {boolean} if no warnings occurred.
  */
 async function warnForIncorrectMonitorIds(actionsObj) {
-  const displays = await chrome.system.display.getInfo({});
+  const displays = await Displays.getDisplays();
   const actionDisplayNames = new Set(actionsObj.map((a) => a.display));
 
   const missingDisplayNames = [...actionDisplayNames.values()]
@@ -138,7 +139,7 @@ function restoreOptions() {
 }
 
 async function showDisplays() {
-  const displays = await chrome.system.display.getInfo({});
+  const displays = await Displays.getDisplays();
 
   // Sort displays by position on desktop -> left to right, then top to bottom
   displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
@@ -155,9 +156,11 @@ async function showDisplays() {
     cols[1].replaceChildren(document.createTextNode(display.id));
     cols[2].replaceChildren(document.createTextNode(display.isPrimary));
     cols[3].replaceChildren(document.createTextNode(display.isInternal));
+    cols[4].replaceChildren(document.createTextNode(display.resolution));
+    cols[5].replaceChildren(document.createTextNode(`${display.bounds.width}x${display.bounds.height}`));
     delete display.bounds.height;
     delete display.bounds.width;
-    cols[4].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
+    cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
     displayTable.appendChild(displayRow);
   }
 }
