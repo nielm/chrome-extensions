@@ -6,6 +6,7 @@ export class Action {
   // identifier of the action. It used in matchers.
   id;
   // id of the display, action will not be performed if display doesn't exist
+  // see findDisplayByName for details
   display;
   menuName;
   shortcutId;
@@ -90,7 +91,8 @@ export class Action {
       default:
         filter = (d) => (
           d.name === prefixDisplayName ||
-          d.id == prefixDisplayName // note this is a number == string comparison
+          d.id == prefixDisplayName || // note this is a number == string comparison
+          d.resolution === prefixDisplayName
         );
         break;
     }

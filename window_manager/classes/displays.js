@@ -15,7 +15,7 @@ export class Display {
     this.bounds = display.bounds;
     this.workArea = display.workArea;
 
-    const nativeMode = display.modes.find(m => m.isNative);
+    const nativeMode = display.modes.find((m) => m.isNative);
     this.resolution = `${nativeMode.width}x${nativeMode.height}`;
   }
 }

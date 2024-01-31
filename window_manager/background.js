@@ -13,15 +13,15 @@ let displayChangedTimeoutId = null;
 })();
 
 chrome.commands.onCommand.addListener(async (command, tab) => {
-  const commandIdPrefix = "zzz-shortcut-";
+  const commandIdPrefix = 'zzz-shortcut-';
 
-  if (command === "all-windows-shortcut") {
+  if (command === 'all-windows-shortcut') {
     updateWindows();
-  } else if (command === "focused-window-shortcut") {
+  } else if (command === 'focused-window-shortcut') {
     if (tab) {
       updateWindowWithMatchedActions(tab.windowId);
     } else {
-      console.log("focused-window-shortcut triggered but tab is not defined.");
+      console.log('focused-window-shortcut triggered but tab is not defined.');
     }
   } else if (command.startsWith(commandIdPrefix)) {
     const shortcutId = parseInt(command.slice(commandIdPrefix.length), 10);
