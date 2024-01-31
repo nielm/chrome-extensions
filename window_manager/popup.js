@@ -12,12 +12,14 @@ async function createActionsMenu() {
   const actionsPromise = Action.loadAll();
   const displays = await Displays.getDisplays();
 
-  const actions = (await actionsPromise)
+  const actions = new Map();
+  (await actionsPromise)
       .filter((action) => action.menuName)
-      .filter((action) => action.findDisplay(displays)!=null);
+      .filter((action) => action.findDisplay(displays)!=null)
+      .forEach((action) => actions.set(action.menuName, action));
 
   const actionsEl = document.getElementById('actions');
-  for (const action of actions) {
+  for (const action of actions.values()) {
     const actionEl = document.createElement('button');
     actionEl.textContent = action.menuName;
     actionEl.addEventListener('click', () => chrome.runtime.sendMessage({command: 'updateWindows', actionId: action.id}));
