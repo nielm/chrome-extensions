@@ -1,6 +1,9 @@
 import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 
+// As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
+const QUOTA_BYTES_PER_ITEM = 8192;
+
 async function saveOptions() {
   const actions = document.getElementById('actionsInput').value;
   const matchers = document.getElementById('matchersInput').value;
@@ -31,12 +34,24 @@ async function validateOptions() {
     document.getElementById('actionsInputStatus').textContent = e.message;
     valid = false;
   }
+  const actionsSize = new TextEncoder().encode(JSON.stringify({actions})).length;
+  if (actionsSize > QUOTA_BYTES_PER_ITEM) {
+    document.getElementById('actionsInputStatus').textContent =
+        `Config too large: ${actionsSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
+    valid = false;
+  }
 
   try {
     matchersObj = JSON.parse(matchers);
     document.getElementById('matchersInputStatus').textContent = '';
   } catch (e) {
     document.getElementById('matchersInputStatus').textContent = e.message;
+    valid = false;
+  }
+  const matchersSize = new TextEncoder().encode(JSON.stringify({matchers})).length;
+  if (matchersSize > QUOTA_BYTES_PER_ITEM) {
+    document.getElementById('matchersInputStatus').textContent =
+        `Config too large: ${matchersSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
     valid = false;
   }
 
