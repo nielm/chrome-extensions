@@ -11,12 +11,24 @@ async function saveOptions() {
 
   if (await validateOptions()) {
     chrome.storage.sync.set(
-        {actions, matchers, settings},
+        {
+          actions: compress(actions),
+          matchers: compress(matchers),
+          settings: compress(settings)
+        },
         () => {
           setStatus('Options saved');
         },
     );
   }
+}
+
+function compress(value) {
+  return JSON.stringify(JSON.parse(value));
+}
+
+function format(value) {
+  return JSON.stringify(JSON.parse(value), undefined, 2);
 }
 
 async function validateOptions() {
@@ -34,7 +46,7 @@ async function validateOptions() {
     document.getElementById('actionsInputStatus').textContent = e.message;
     valid = false;
   }
-  const actionsSize = new TextEncoder().encode(JSON.stringify({actions})).length;
+  const actionsSize = new TextEncoder().encode(JSON.stringify({actions: compress(actions)})).length;
   if (actionsSize > QUOTA_BYTES_PER_ITEM) {
     document.getElementById('actionsInputStatus').textContent =
         `Config too large: ${actionsSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
@@ -48,7 +60,7 @@ async function validateOptions() {
     document.getElementById('matchersInputStatus').textContent = e.message;
     valid = false;
   }
-  const matchersSize = new TextEncoder().encode(JSON.stringify({matchers})).length;
+  const matchersSize = new TextEncoder().encode(JSON.stringify({matchers: compress(matchers)})).length;
   if (matchersSize > QUOTA_BYTES_PER_ITEM) {
     document.getElementById('matchersInputStatus').textContent =
         `Config too large: ${matchersSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
@@ -133,9 +145,9 @@ function formatOptions() {
   const settings = document.getElementById('settingsInput').value;
 
   if (validateOptions()) {
-    document.getElementById('actionsInput').value = JSON.stringify(JSON.parse(actions), undefined, 2);
-    document.getElementById('matchersInput').value = JSON.stringify(JSON.parse(matchers), undefined, 2);
-    document.getElementById('settingsInput').value = JSON.stringify(JSON.parse(settings), undefined, 2);
+    document.getElementById('actionsInput').value = format(actions);
+    document.getElementById('matchersInput').value = format(matchers);
+    document.getElementById('settingsInput').value = format(settings);
   }
 }
 
@@ -145,9 +157,9 @@ function restoreOptions() {
   chrome.storage.sync.get(
       {actions: '', matchers: '', settings: ''},
       (items) => {
-        document.getElementById('actionsInput').value = items.actions;
-        document.getElementById('matchersInput').value = items.matchers;
-        document.getElementById('settingsInput').value = items.settings;
+        document.getElementById('actionsInput').value = format(items.actions);
+        document.getElementById('matchersInput').value = format(items.matchers);
+        document.getElementById('settingsInput').value = format(items.settings);
         validateOptions();
       },
   );
