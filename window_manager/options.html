@@ -8,9 +8,12 @@
         width: 90%;
       }
 
-      .status {
+      .warning {
         color: red;
-        margin: 10px auto;
+      }
+
+      .info {
+        color: orange;
       }
 
       pre {
@@ -32,6 +35,9 @@
       }
       table {
         border-collapse: collapse;
+      }
+      #buttons {
+        margin: 16px auto;
       }
 
     </style>
@@ -74,23 +80,26 @@
       <a href='https://github.com/birnenlabs/chrome-extensions/blob/main/window_manager/README.md' target="_blank">documentation on github</a>.
 
       <h2>Actions</h2>
-
-      <div class="status" id="actionsInputStatus"></div>
       <textarea id="actionsInput" rows="25" cols="50"></textarea>
+      <div id="actionsCounter"></div>
+      <div id="actionsInputStatus">OK</div>
 
       <h2>Matchers</h2>
-
-      <div class="status" id="matchersInputStatus"></div>
       <textarea id="matchersInput" rows="25" cols="50"></textarea>
+      <div id="matchersCounter"></div>
+      <div id="matchersInputStatus">OK</div>
 
       <h2>Settings</h2>
-      <div class="status" id="settingsInputStatus"></div>
       <textarea id="settingsInput" rows="10" cols="50"></textarea>
+      <div id="settingsCounter"></div>
+      <div id="settingsInputStatus">OK</div>
 
-      <div class="status" id="status"></div>
-      <button id="validate">Validate</button>
-      <button id="format">Format</button>
-      <button id="save">Save</button>
+      <div id="buttons">
+        <button id="validate">Validate</button>
+        <button id="format">Format</button>
+        <button id="save">Save</button>
+      </div>
+      <div class="warning" id="status"></div>
     </div>
 
     <script src="./options.js"

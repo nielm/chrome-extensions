@@ -31,61 +31,79 @@ function format(value) {
   return JSON.stringify(JSON.parse(value), undefined, 2);
 }
 
-async function validateOptions() {
-  const actions = document.getElementById('actionsInput').value;
-  const matchers = document.getElementById('matchersInput').value;
-  const settings = document.getElementById('settingsInput').value;
+let maybeUpdateStatusTimer = undefined;
+function maybeUpdateStatus() {
+  if (maybeUpdateStatusTimer) {
+    clearTimeout(maybeUpdateStatusTimer);
+  }
+  maybeUpdateStatusTimer = setTimeout(validateOptions, 500, false);
+}
 
+async function validateOptions(extended = true) {
   let valid = true;
-  let actionsObj;
-  let matchersObj;
+  let actions;
+  let matchers;
+  let settings;
+
   try {
-    actionsObj = JSON.parse(actions);
-    document.getElementById('actionsInputStatus').textContent = '';
+    actions = compress(document.getElementById('actionsInput').value);
+    const size = new TextEncoder().encode(JSON.stringify({actions})).length;
+    document.getElementById('actionsCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+    if (size > QUOTA_BYTES_PER_ITEM) {
+      throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
+    }
+    document.getElementById('actionsInputStatus').textContent = 'OK';
+    document.getElementById('actionsInputStatus').removeAttribute('class');
   } catch (e) {
     document.getElementById('actionsInputStatus').textContent = e.message;
-    valid = false;
-  }
-  const actionsSize = new TextEncoder().encode(JSON.stringify({actions: compress(actions)})).length;
-  if (actionsSize > QUOTA_BYTES_PER_ITEM) {
-    document.getElementById('actionsInputStatus').textContent =
-        `Config too large: ${actionsSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
+    document.getElementById('actionsInputStatus').classList.add('warning');
     valid = false;
   }
 
   try {
-    matchersObj = JSON.parse(matchers);
-    document.getElementById('matchersInputStatus').textContent = '';
+    matchers = compress(document.getElementById('matchersInput').value);
+    const size = new TextEncoder().encode(JSON.stringify({matchers})).length;
+    document.getElementById('matchersCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+    if (size > QUOTA_BYTES_PER_ITEM) {
+      throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
+    }
+    document.getElementById('matchersInputStatus').textContent = 'OK';
+    document.getElementById('matchersInputStatus').removeAttribute('class');
   } catch (e) {
     document.getElementById('matchersInputStatus').textContent = e.message;
-    valid = false;
-  }
-  const matchersSize = new TextEncoder().encode(JSON.stringify({matchers: compress(matchers)})).length;
-  if (matchersSize > QUOTA_BYTES_PER_ITEM) {
-    document.getElementById('matchersInputStatus').textContent =
-        `Config too large: ${matchersSize}b (allowed: ${QUOTA_BYTES_PER_ITEM}b)`
+    document.getElementById('matchersInputStatus').classList.add('warning');
     valid = false;
   }
 
   try {
-    JSON.parse(settings);
-    document.getElementById('settingsInputStatus').textContent = '';
+    settings = compress(document.getElementById('settingsInput').value);
+    const size = new TextEncoder().encode(JSON.stringify({settings})).length;
+    document.getElementById('settingsCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+    if (size > QUOTA_BYTES_PER_ITEM) {
+      throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
+    }
+    document.getElementById('settingsInputStatus').textContent = 'OK';
+    document.getElementById('settingsInputStatus').removeAttribute('class');
   } catch (e) {
     document.getElementById('settingsInputStatus').textContent = e.message;
+    document.getElementById('settingsInputStatus').classList.add('warning');
     valid = false;
   }
 
   // JSON validation completed
-  //
   if (!valid) {
-    setStatus('Invalid JSON');
+    setStatus('Invalid JSON configuration');
     return valid;
   }
 
-  const hasWarnings = ! await warnForIncorrectMonitorIds(actionsObj);
+  if (!extended) {
+    return valid;
+  }
+
+  const hasWarnings = !await warnForIncorrectMonitorIds(JSON.parse(actions));
 
   // verify matchers reference valid actions.
-  valid = validateMatchersAndActions(actionsObj, matchersObj);
+  valid = validateMatchersAndActions(JSON.parse(actions), JSON.parse(matchers));
 
   if (valid) {
     if (hasWarnings) {
@@ -112,8 +130,10 @@ function validateMatchersAndActions(actionsObj, matchersObj) {
   const missingActionIds = [...referencedActionIDs.values()].filter((id) => !actionIDs.has(id));
   if (missingActionIds.length > 0) {
     document.getElementById('matchersInputStatus').textContent = `Matchers refer to unknown Action ids: ${JSON.stringify(missingActionIds, null, 2)}`;
+    document.getElementById('matchersInputStatus').classList.add('info');
     return false;
   }
+  document.getElementById('matchersInputStatus').classList.remove('info');
   return true;
 }
 
@@ -133,8 +153,10 @@ async function warnForIncorrectMonitorIds(actionsObj) {
   if (missingDisplayNames.length>0) {
     document.getElementById('actionsInputStatus').textContent =
         `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingDisplayNames, null, 2)}`;
+    document.getElementById('actionsInputStatus').classList.add('info');
     return false;
   }
+  document.getElementById('actionsInputStatus').classList.remove('info');
   return true;
 }
 
@@ -151,8 +173,7 @@ function formatOptions() {
   }
 }
 
-// Restores select box and checkbox state using the preferences
-// stored in chrome.storage.
+// Restores the preferences from chrome.storage.
 function restoreOptions() {
   chrome.storage.sync.get(
       {actions: '', matchers: '', settings: ''},
@@ -208,6 +229,7 @@ document.getElementById('format').addEventListener('click', formatOptions);
 
 chrome.system.display.onDisplayChanged.addListener(showDisplays);
 
+document.addEventListener('keyup', maybeUpdateStatus);
 document.addEventListener('keydown',
     function(event) {
       if (event.key === 's' && !event.shiftKey && !event.altKey &&
