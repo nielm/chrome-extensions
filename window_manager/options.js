@@ -58,25 +58,26 @@ function maybeValidateSettings() {
 }
 
 function validateActions() {
-  return validateField('actions') && validateContent('actions', Action.validate);
+  return validateField('actions', Action.validate);
 }
 
 function validateMatchers() {
-  return validateField('matchers') && validateContent('matchers', Matcher.validate);
+  return validateField('matchers', Matcher.validate);
 }
 
 function validateSettings() {
-  return validateField('settings') && validateContent('settings', Settings.validate);
+  return validateField('settings', Settings.validate);
 }
 
-function validateField(element) {
+function validateField(element, validateFn) {
+  let json;
   const statusEl = document.getElementById(element + 'InputStatus');
   statusEl.textContent = '';
   statusEl.removeAttribute('class');
 
   try {
-    const config = compress(document.getElementById(element + 'Input').value);
-    const size = new TextEncoder().encode(JSON.stringify({[element]: config})).length;
+    json = compress(document.getElementById(element + 'Input').value);
+    const size = new TextEncoder().encode(JSON.stringify({[element]: json})).length;
     document.getElementById(element + 'Counter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
     if (size > QUOTA_BYTES_PER_ITEM) {
       throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
@@ -87,15 +88,7 @@ function validateField(element) {
     return false;
   }
 
-  return true;
-}
-
-function validateContent(element, validateFn) {
-  const jsonObj = JSON.parse(document.getElementById(element + 'Input').value);
-  const statusEl = document.getElementById(element + 'InputStatus');
-  statusEl.textContent = '';
-  statusEl.removeAttribute('class');
-
+  const jsonObj = JSON.parse(json);
   try {
     for (let o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
       validateFn(o);
@@ -119,28 +112,20 @@ async function validateOptions() {
   const actionsObj = JSON.parse(document.getElementById('actionsInput').value);
   const matchersObj = JSON.parse(document.getElementById('matchersInput').value);
 
-  const missingMonitorIds = await findMissingMonitorIds(actionsObj);
-  const missingActionIds = findMissingActionIds(actionsObj, matchersObj);
+  const matchersWithInvalidActionsMap = findMatchersWithInvalidActions(actionsObj, matchersObj);
 
-  if (missingMonitorIds.length > 0) {
-    const statusEl = document.getElementById('actionsInputStatus');
-    statusEl.classList.add('info');
-    statusEl.textContent = `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingMonitorIds, null, 2)}`
-  }
+  // At this point JSONs are valid and we can show parsed actions
+  await showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap);
+  
 
-  if (missingActionIds.length > 0) {
+  if (matchersWithInvalidActionsMap.size > 0) {
     const statusEl = document.getElementById('matchersInputStatus');
     statusEl.classList.add('warning');
-    statusEl.textContent = `Matchers refer to unknown Action ids: ${JSON.stringify(missingActionIds, null, 2)}`;
+    statusEl.textContent = `Matchers refer to unknown Action ids: ${Array.from(matchersWithInvalidActionsMap.keys())}. See "Parsed actions" section for details.`;
 
     setStatus('Incorrect configuration - see above.');
     return false;
   } else {
-    if (missingMonitorIds.length > 0) {
-      setStatus('Valid with warnings - see above.');
-    } else {
-      setStatus('Configuration validated.');
-    }
     return true;
   }
 }
@@ -151,25 +136,18 @@ async function validateOptions() {
  * @param {*} matchersObj
  * @return {boolean} if validated successfully
  */
-function findMissingActionIds(actionsObj, matchersObj) {
-  const actionIDs = new Set(actionsObj.map((a) => a.id));
-  const referencedActionIDs = new Set(matchersObj.map((m)=> m.actions).flat());
+function findMatchersWithInvalidActions(actionsObj, matchersObj) {
+  const validActionIds = new Set(actionsObj.map((a) => a.id));
+  const referencedActionIds = new Set(matchersObj.map((m)=> m.actions).flat());
 
-  return [...referencedActionIDs.values()].filter((id) => !actionIDs.has(id));
-}
+  const result = new Map();
+  for (const referencedActionId of referencedActionIds) {
+    if (!validActionIds.has(referencedActionId)) {
+      result.set(referencedActionId, matchersObj.filter(matcher => (matcher.actions.includes(referencedActionId))));
+    }
+  }
 
-/**
- * Check that referenced displays are actually present, and warn if not
- *
- * @param {*} actionsObj
- * @return {boolean} if no warnings occurred.
- */
-async function findMissingMonitorIds(actionsObj) {
-  const displays = await Displays.getDisplays();
-  const actionDisplayNames = new Set(actionsObj.map((a) => a.display));
-
-  return [...actionDisplayNames.values()]
-      .filter((d) => Action.findDisplayByName(d, displays)===null);
+  return result;
 }
 
 
@@ -223,6 +201,68 @@ async function showDisplays() {
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
     displayTable.appendChild(displayRow);
   }
+}
+
+async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap) {
+  const actionsTableEl = document.getElementById('actionsTable');
+  const actionsTableRowTemplate = document.getElementById('actionsTableRow');
+  const actionsTableInvalidRow = document.getElementById('actionsTableInvalidRow');
+  actionsTableEl.replaceChildren();
+
+  // Prepare shortcuts map
+  const commandIdPrefix = 'zzz-shortcut-';
+  const shortcutsMap = new Map(
+    (await chrome.commands.getAll())
+       .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
+       .map(cmd => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined'])
+  );
+
+  // prepare matchers amount map
+  const matchersMap = new Map();
+  for (const matcher of matchersObj) {
+    for (const action of matcher.actions) {
+      matchersMap.set(action, (matchersMap.has(action) ? [...matchersMap.get(action), matcher] : [matcher]));
+    }
+  }
+
+  // prepare displays
+  const displays = await Displays.getDisplays();
+  
+  for (const [actionId, matchers] of matchersWithInvalidActionsMap) {
+    const displayRow = actionsTableInvalidRow.cloneNode(true);
+    const cols = [...displayRow.getElementsByTagName('td')];
+
+    cols[0].replaceChildren(document.createTextNode(actionId));
+    cols[1].replaceChildren(document.createTextNode('invalid'));
+    cols[2].replaceChildren(...(matchers.map((matcher) => createMatcherDiv(matcher))));
+    cols[3].replaceChildren(document.createTextNode('invalid'));
+
+    actionsTableEl.appendChild(displayRow);
+  } 
+  
+  for (const action of actionsObj) {
+    const displayRow = actionsTableRowTemplate.cloneNode(true);
+    const cols = [...displayRow.getElementsByTagName('td')];
+
+    cols[0].replaceChildren(document.createTextNode(action.id));
+    cols[1].replaceChildren(document.createTextNode(action.display));
+    cols[2].replaceChildren(document.createTextNode(Action.findDisplayByName(action.display, displays)===null ? 'not connected' : ''));
+    cols[3].replaceChildren(...(matchersMap.get(action.id) || []).map((matcher) => createMatcherDiv(matcher)));
+    cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
+    cols[5].replaceChildren(document.createTextNode(
+      action.shortcutId
+        ? `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]`
+        : ''));
+    
+    actionsTableEl.appendChild(displayRow);
+  }
+}
+
+function createMatcherDiv(matcher) {
+  const el = document.createElement('div')
+  el.textContent = Matcher.from(matcher).toString();
+  el.classList.add('matcherText')
+  return el;
 }
 
 function setStatus(text) {

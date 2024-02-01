@@ -53,4 +53,13 @@ export class Matcher {
     // console.log('Matched');
     return true;
   }
+
+  toString() {
+    return [ 
+      this.windowTypes ? `windowTypes: ${this.windowTypes}` : null,
+      this.anyTabUrl ? `url: ${this.anyTabUrl}` : null,
+      this.minTabsNum ? `minTabsNum: ${this.minTabsNum}` : null,
+      this.maxTabsNum !== 1_000_000_000 ? `maxTabsNum: ${this.maxTabsNum}` : null,
+    ].filter(Boolean).join(", ") || 'CATCH ALL';
+  }
 }

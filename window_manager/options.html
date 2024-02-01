@@ -16,10 +16,6 @@
         color: red;
       }
 
-      .info {
-        color: orange;
-      }
-
       pre {
         font-size: 9pt;
       }
@@ -32,6 +28,23 @@
         border: 1px solid black;
         padding: 5px;
         text-align: center;
+      }
+      #actionsTableRow > td:first-child, #actionsTableInvalidRow > td:first-child {
+        text-align: left;
+      }
+      #actionsTableRow > td:nth-child(3) {
+        color: red;
+      }
+      #actionsTableInvalidRow {
+        background-color: #fee;
+        color: red;
+      }
+      .matcherText {
+        background-color: #eff;
+        border: 1px solid lightsteelblue;
+        margin: 2px 0;
+        text-align: left;
+        width: fit-content;
       }
       th {
         font-weight: bold;
@@ -57,7 +70,7 @@
           <th>internal</th>
           <th>Reported resolution (native)</th>
           <th>Actual resolution (scaled)</th>
-          <th>Desktop arrangement</td>
+          <th>Desktop arrangement</th>
         </thead>
         <tbody id="displays">
         </tbody>
@@ -104,6 +117,46 @@
         <button id="save">Save</button>
       </div>
       <div class="warning" id="status"></div>
+
+      <h1>Parsed actions</h1>
+      <table>
+        <thead >
+          <th>ID</th>
+          <th>Display</th>
+          <th>Display status</th>
+          <th>Used in matchers</th>
+          <th>Menu name</th>
+          <th>Shortcut id</th>
+        </thead>
+        <tbody id="actionsTable">
+        </tbody>
+      </table>
+
+      <!-- template for a actionsTableRow -->
+      <table style="display: none">
+        <tbody>
+          <tr id="actionsTableRow">
+            <td style="font-weight: bold;">ID</td>
+            <td>Display</td>
+            <td>Display status</td>
+            <td>Matchers</td>
+            <td>Menu name</td>
+            <td>Shortcut id</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- template for a actionsTableInvalidRow -->
+      <table style="display: none">
+        <tbody>
+          <tr id="actionsTableInvalidRow">
+            <td style="font-weight: bold;">ID</td>
+            <td colspan=2>Display</td>
+            <td>Matchers</td>
+            <td colspan=2>Menu name</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <script src="./options.js"
