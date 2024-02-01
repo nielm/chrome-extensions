@@ -179,12 +179,24 @@ function restoreOptions() {
 async function showDisplays() {
   const displays = await Displays.getDisplays();
 
+  let actionsObj = [];
+  try {
+    actionsObj = JSON.parse(document.getElementById('actionsInput').value);
+  } catch (e) {
+    // Ignore errors - if JSON is invalid, error message will be shown.
+  }
+  const displayMap = new Map(
+    [...new Set(actionsObj.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)])
+  );
+  
   // Sort displays by position on desktop -> left to right, then top to bottom
   displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
   displays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
 
-  const displayTable = document.getElementById('displays');
-  const displayRowTemplate = document.getElementById('displayRow');
+  const displayTable = document.getElementById('displaysTable');
+  const displayRowTemplate = document.getElementById('displaysTableRow');
+  const displayTableInvalidRowTemplate = document.getElementById('displaysTableInvalidRow');
+  
   displayTable.replaceChildren();
   for (const display of displays) {
     const displayRow = displayRowTemplate.cloneNode(true);
@@ -199,6 +211,19 @@ async function showDisplays() {
     delete display.bounds.height;
     delete display.bounds.width;
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
+    cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map(action => createTableChip(action.id))));
+    displayTable.appendChild(displayRow);
+  }
+
+  const missingDisplays = new Set([...displayMap].filter(([display, matched]) => matched === null).map(([display, matched]) => display));
+  for (const display of missingDisplays) {
+    const displayRow = displayTableInvalidRowTemplate.cloneNode(true);
+    const cols = [...displayRow.getElementsByTagName('td')];
+
+    cols[0].replaceChildren(document.createTextNode(
+      `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`
+    ));
+    cols[1].replaceChildren(...(actionsObj.filter((action) => action.display === display).map(action => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 }
@@ -247,6 +272,7 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     cols[0].replaceChildren(document.createTextNode(action.id));
     cols[1].replaceChildren(document.createTextNode(action.display));
     cols[2].replaceChildren(document.createTextNode(Action.findDisplayByName(action.display, displays)===null ? 'not connected' : ''));
+    cols[2].classList.add('warning');
     cols[3].replaceChildren(...(matchersMap.get(action.id) || []).map((matcher) => createMatcherDiv(matcher)));
     cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
     cols[5].replaceChildren(document.createTextNode(
@@ -259,9 +285,13 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
 }
 
 function createMatcherDiv(matcher) {
+  return createTableChip(Matcher.from(matcher).toString());
+}
+
+function createTableChip(val) {
   const el = document.createElement('div')
-  el.textContent = Matcher.from(matcher).toString();
-  el.classList.add('matcherText')
+  el.textContent = val;
+  el.classList.add('tableChip');
   return el;
 }
 
