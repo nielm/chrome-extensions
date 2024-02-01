@@ -1,3 +1,5 @@
+import {Settings} from './settings.js';
+
 // Default values will match all the windows
 export class Matcher {
   windowTypes;
@@ -20,6 +22,14 @@ export class Matcher {
       throw new Error('action for matcher not defined');
     }
     return Object.assign(new Matcher(), json);
+  }
+
+  static validate(json) {
+    try {
+      Settings.validateClass(new Matcher(), json, ['windowTypes', 'anyTabUrl', 'minTabsNum', 'maxTabsNum', 'comment']);
+    } catch (e) {
+      throw new Error(`Invalid matcher with actions=[${json.actions}]: ${e.message}`);
+    }
   }
 
   matches(window) {

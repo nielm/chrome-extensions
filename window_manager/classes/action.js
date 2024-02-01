@@ -1,4 +1,5 @@
 import {Position} from './position.js';
+import {Settings} from './settings.js';
 
 export class Action {
   column;
@@ -35,6 +36,16 @@ export class Action {
       json.row = Object.assign(new Position(), json.row);
     }
     return Object.assign(new Action(), json);
+  }
+
+  static validate(json) {
+    try {
+      Settings.validateClass(new Action(), json, ['menuName', 'shortcutId', 'comment']);
+      Position.validate(json.column);
+      Position.validate(json.row);
+    } catch (e) {
+      throw new Error(`Invalid action with id=${json.id}: ${e.message}`);
+    }
   }
 
   /**

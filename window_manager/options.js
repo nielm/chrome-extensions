@@ -1,5 +1,7 @@
 import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
+import {Matcher} from './classes/matcher.js';
+import {Settings} from './classes/settings.js';
 
 // As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
 const QUOTA_BYTES_PER_ITEM = 8192;
@@ -17,7 +19,7 @@ async function saveOptions() {
           settings: compress(settings)
         },
         () => {
-          setStatus('Options saved');
+          setStatus('', '', '', 'Options saved');
         },
     );
   }
@@ -31,90 +33,116 @@ function format(value) {
   return JSON.stringify(JSON.parse(value), undefined, 2);
 }
 
-let maybeUpdateStatusTimer = undefined;
-function maybeUpdateStatus() {
-  if (maybeUpdateStatusTimer) {
-    clearTimeout(maybeUpdateStatusTimer);
+let maybeValidateActionsTimer = undefined;
+function maybeValidateActions() {
+  if (maybeValidateActionsTimer) {
+    clearTimeout(maybeValidateActionsTimer);
   }
-  maybeUpdateStatusTimer = setTimeout(validateOptions, 500, false);
+  maybeValidateActionsTimer = setTimeout(validateActions, 100, false);
 }
 
-async function validateOptions(extended = true) {
-  let valid = true;
-  let actions;
-  let matchers;
-  let settings;
+let maybeValidateMatchersTimer = undefined;
+function maybeValidateMatchers() {
+  if (maybeValidateMatchersTimer) {
+    clearTimeout(maybeValidateMatchersTimer);
+  }
+  maybeValidateMatchersTimer = setTimeout(validateMatchers, 100, false);
+}
+
+let maybeValidateSettingsTimer = undefined;
+function maybeValidateSettings() {
+  if (maybeValidateSettingsTimer) {
+    clearTimeout(maybeValidateSettingsTimer);
+  }
+  maybeValidateSettingsTimer = setTimeout(validateSettings, 100, false);
+}
+
+function validateActions() {
+  return validateField('actions') && validateContent('actions', Action.validate);
+}
+
+function validateMatchers() {
+  return validateField('matchers') && validateContent('matchers', Matcher.validate);
+}
+
+function validateSettings() {
+  return validateField('settings') && validateContent('settings', Settings.validate);
+}
+
+function validateField(element) {
+  const statusEl = document.getElementById(element + 'InputStatus');
+  statusEl.textContent = '';
+  statusEl.removeAttribute('class');
 
   try {
-    actions = compress(document.getElementById('actionsInput').value);
-    const size = new TextEncoder().encode(JSON.stringify({actions})).length;
-    document.getElementById('actionsCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+    const config = compress(document.getElementById(element + 'Input').value);
+    const size = new TextEncoder().encode(JSON.stringify({[element]: config})).length;
+    document.getElementById(element + 'Counter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
     if (size > QUOTA_BYTES_PER_ITEM) {
       throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
     }
-    document.getElementById('actionsInputStatus').textContent = 'OK';
-    document.getElementById('actionsInputStatus').removeAttribute('class');
   } catch (e) {
-    document.getElementById('actionsInputStatus').textContent = e.message;
-    document.getElementById('actionsInputStatus').classList.add('warning');
-    valid = false;
+    statusEl.textContent = e.message;
+    statusEl.classList.add('warning');
+    return false;
   }
+
+  return true;
+}
+
+function validateContent(element, validateFn) {
+  const jsonObj = JSON.parse(document.getElementById(element + 'Input').value);
+  const statusEl = document.getElementById(element + 'InputStatus');
+  statusEl.textContent = '';
+  statusEl.removeAttribute('class');
 
   try {
-    matchers = compress(document.getElementById('matchersInput').value);
-    const size = new TextEncoder().encode(JSON.stringify({matchers})).length;
-    document.getElementById('matchersCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
-    if (size > QUOTA_BYTES_PER_ITEM) {
-      throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
+    for (let o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
+      validateFn(o);
     }
-    document.getElementById('matchersInputStatus').textContent = 'OK';
-    document.getElementById('matchersInputStatus').removeAttribute('class');
   } catch (e) {
-    document.getElementById('matchersInputStatus').textContent = e.message;
-    document.getElementById('matchersInputStatus').classList.add('warning');
-    valid = false;
+    statusEl.textContent = e.message;
+    statusEl.classList.add('warning');
+    return false;
   }
 
-  try {
-    settings = compress(document.getElementById('settingsInput').value);
-    const size = new TextEncoder().encode(JSON.stringify({settings})).length;
-    document.getElementById('settingsCounter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
-    if (size > QUOTA_BYTES_PER_ITEM) {
-      throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
-    }
-    document.getElementById('settingsInputStatus').textContent = 'OK';
-    document.getElementById('settingsInputStatus').removeAttribute('class');
-  } catch (e) {
-    document.getElementById('settingsInputStatus').textContent = e.message;
-    document.getElementById('settingsInputStatus').classList.add('warning');
-    valid = false;
-  }
+  return true;
+}
 
-  // JSON validation completed
-  if (!valid) {
+async function validateOptions() {
+  // Use single "&" to make sure that all methods are called
+  if (!(validateActions() & validateMatchers() & validateSettings())) {
     setStatus('Invalid JSON configuration');
-    return valid;
+    return false;
   }
 
-  if (!extended) {
-    return valid;
+  const actionsObj = JSON.parse(document.getElementById('actionsInput').value);
+  const matchersObj = JSON.parse(document.getElementById('matchersInput').value);
+
+  const missingMonitorIds = await findMissingMonitorIds(actionsObj);
+  const missingActionIds = findMissingActionIds(actionsObj, matchersObj);
+
+  if (missingMonitorIds.length > 0) {
+    const statusEl = document.getElementById('actionsInputStatus');
+    statusEl.classList.add('info');
+    statusEl.textContent = `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingMonitorIds, null, 2)}`
   }
 
-  const hasWarnings = !await warnForIncorrectMonitorIds(JSON.parse(actions));
+  if (missingActionIds.length > 0) {
+    const statusEl = document.getElementById('matchersInputStatus');
+    statusEl.classList.add('warning');
+    statusEl.textContent = `Matchers refer to unknown Action ids: ${JSON.stringify(missingActionIds, null, 2)}`;
 
-  // verify matchers reference valid actions.
-  valid = validateMatchersAndActions(JSON.parse(actions), JSON.parse(matchers));
-
-  if (valid) {
-    if (hasWarnings) {
+    setStatus('Incorrect configuration - see above.');
+    return false;
+  } else {
+    if (missingMonitorIds.length > 0) {
       setStatus('Valid with warnings - see above.');
     } else {
       setStatus('Configuration validated.');
     }
-  } else {
-    setStatus('Incorrect configuration - see above.');
+    return true;
   }
-  return valid;
 }
 
 /**
@@ -123,18 +151,11 @@ async function validateOptions(extended = true) {
  * @param {*} matchersObj
  * @return {boolean} if validated successfully
  */
-function validateMatchersAndActions(actionsObj, matchersObj) {
+function findMissingActionIds(actionsObj, matchersObj) {
   const actionIDs = new Set(actionsObj.map((a) => a.id));
   const referencedActionIDs = new Set(matchersObj.map((m)=> m.actions).flat());
 
-  const missingActionIds = [...referencedActionIDs.values()].filter((id) => !actionIDs.has(id));
-  if (missingActionIds.length > 0) {
-    document.getElementById('matchersInputStatus').textContent = `Matchers refer to unknown Action ids: ${JSON.stringify(missingActionIds, null, 2)}`;
-    document.getElementById('matchersInputStatus').classList.add('info');
-    return false;
-  }
-  document.getElementById('matchersInputStatus').classList.remove('info');
-  return true;
+  return [...referencedActionIDs.values()].filter((id) => !actionIDs.has(id));
 }
 
 /**
@@ -143,21 +164,12 @@ function validateMatchersAndActions(actionsObj, matchersObj) {
  * @param {*} actionsObj
  * @return {boolean} if no warnings occurred.
  */
-async function warnForIncorrectMonitorIds(actionsObj) {
+async function findMissingMonitorIds(actionsObj) {
   const displays = await Displays.getDisplays();
   const actionDisplayNames = new Set(actionsObj.map((a) => a.display));
 
-  const missingDisplayNames = [...actionDisplayNames.values()]
+  return [...actionDisplayNames.values()]
       .filter((d) => Action.findDisplayByName(d, displays)===null);
-
-  if (missingDisplayNames.length>0) {
-    document.getElementById('actionsInputStatus').textContent =
-        `Warning: Actions refer to the following unknown display names (This is normal if they are not currently connected): ${JSON.stringify(missingDisplayNames, null, 2)}`;
-    document.getElementById('actionsInputStatus').classList.add('info');
-    return false;
-  }
-  document.getElementById('actionsInputStatus').classList.remove('info');
-  return true;
 }
 
 
@@ -214,10 +226,10 @@ async function showDisplays() {
 }
 
 function setStatus(text) {
-  const status = document.getElementById('status');
-  status.textContent = text;
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = text;
   setTimeout(() => {
-    status.textContent = '';
+    statusEl.textContent = '';
   }, 5000);
 }
 
@@ -227,9 +239,13 @@ document.getElementById('save').addEventListener('click', saveOptions);
 document.getElementById('validate').addEventListener('click', validateOptions);
 document.getElementById('format').addEventListener('click', formatOptions);
 
+document.getElementById('actionsInput').addEventListener('keyup', maybeValidateActions);
+document.getElementById('matchersInput').addEventListener('keyup', maybeValidateMatchers);
+document.getElementById('settingsInput').addEventListener('keyup', maybeValidateSettings);
+
 chrome.system.display.onDisplayChanged.addListener(showDisplays);
 
-document.addEventListener('keyup', maybeUpdateStatus);
+
 document.addEventListener('keydown',
     function(event) {
       if (event.key === 's' && !event.shiftKey && !event.altKey &&

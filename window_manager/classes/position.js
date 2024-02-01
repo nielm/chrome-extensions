@@ -1,3 +1,5 @@
+import {Settings} from './settings.js';
+
 export class Position {
   // Start defined as pixel value or percentage of screen
   start = 0;
@@ -6,6 +8,10 @@ export class Position {
 
   static from(json) {
     return Object.assign(new Position(), json);
+  }
+
+  static validate(json) {
+    Settings.validateClass(new Position(), json, ['comment']);
   }
 
   // size: amount of pixels that can be used:
