@@ -89,7 +89,7 @@ async function updateWindowsFromArray(windows) {
   for (const windowId of Array.from(new Set(orderArray.flat().reverse())).reverse()) {
     if (!windowUpdateMap.has(windowId)) {
       // windowIds are added in the same if clause - all of them should be in the map.
-      throw Error(`Action undefined, id: ${windowsId}. This is bug in the code.`);
+      throw Error(`Action undefined, id: ${windowId}. This is bug in the code.`);
     }
     setTimeout(chrome.windows.update,
         timeout++ * UPDATE_TIMEOUT_MS,

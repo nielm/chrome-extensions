@@ -6,20 +6,43 @@ import {Settings} from './classes/settings.js';
 // As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
 const QUOTA_BYTES_PER_ITEM = 8192;
 
+/**
+ * @return {HTMLTextAreaElement}
+ */
+function getHTMLTextAreaElement(name) {
+  const result = document.getElementById(name);
+  if (!(result instanceof HTMLTextAreaElement)) {
+    throw new Error(`Expected '${name}' to be a HTMLTextAreaElement, was: ${result}`);
+  }
+  return result;
+}
+
+/**
+ * @param {HTMLElement} el
+ * @return {HTMLElement}
+ */
+function cloneNode(el) {
+  const result = el.cloneNode(true);
+  if (!(result instanceof HTMLElement)) {
+    throw new Error('Cloned element expected to be HTMLElement');
+  }
+  return result;
+}
+
 async function saveOptions() {
-  const actions = document.getElementById('actionsInput').value;
-  const matchers = document.getElementById('matchersInput').value;
-  const settings = document.getElementById('settingsInput').value;
+  const actions = getHTMLTextAreaElement('actionsInput').value;
+  const matchers = getHTMLTextAreaElement('matchersInput').value;
+  const settings = getHTMLTextAreaElement('settingsInput').value;
 
   if (await validateOptions()) {
     chrome.storage.sync.set(
         {
           actions: compress(actions),
           matchers: compress(matchers),
-          settings: compress(settings),
+          settings: compress(settings)
         },
         () => {
-          setStatus('', '', '', 'Options saved');
+          setStatus('Options saved');
         },
     );
   }
@@ -76,7 +99,7 @@ function validateField(element, validateFn) {
   statusEl.removeAttribute('class');
 
   try {
-    json = compress(document.getElementById(element + 'Input').value);
+    json = compress(getHTMLTextAreaElement(element + 'Input').value);
     const size = new TextEncoder().encode(JSON.stringify({[element]: json})).length;
     document.getElementById(element + 'Counter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
     if (size > QUOTA_BYTES_PER_ITEM) {
@@ -90,7 +113,7 @@ function validateField(element, validateFn) {
 
   const jsonObj = JSON.parse(json);
   try {
-    for (const o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
+    for (let o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
       validateFn(o);
     }
   } catch (e) {
@@ -104,20 +127,20 @@ function validateField(element, validateFn) {
 
 async function validateOptions() {
   // Use single "&" to make sure that all methods are called
-  if (!(validateActions() & validateMatchers() & validateSettings())) {
+  if (!((validateActions() ? 1 : 0) & (validateMatchers() ? 1 : 0) & (validateSettings() ? 1 : 0))) {
     setStatus('Invalid JSON configuration');
     return false;
   }
 
-  const actionsObj = JSON.parse(document.getElementById('actionsInput').value);
-  const matchersObj = JSON.parse(document.getElementById('matchersInput').value);
+  const actionsObj = JSON.parse(getHTMLTextAreaElement('actionsInput').value);
+  const matchersObj = JSON.parse(getHTMLTextAreaElement('matchersInput').value);
 
   const matchersWithInvalidActionsMap = findMatchersWithInvalidActions(actionsObj, matchersObj);
 
   // At this point JSONs are valid and we can show parsed actions
   await showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap);
   await showDisplays();
-
+  
 
   if (matchersWithInvalidActionsMap.size > 0) {
     const statusEl = document.getElementById('matchersInputStatus');
@@ -135,7 +158,7 @@ async function validateOptions() {
  * Verify that all Matchers reference a valid Action
  * @param {*} actionsObj
  * @param {*} matchersObj
- * @return {boolean} if validated successfully
+ * @return {Map<string, any>} if validated successfully
  */
 function findMatchersWithInvalidActions(actionsObj, matchersObj) {
   const validActionIds = new Set(actionsObj.map((a) => a.id));
@@ -144,7 +167,7 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
   const result = new Map();
   for (const referencedActionId of referencedActionIds) {
     if (!validActionIds.has(referencedActionId)) {
-      result.set(referencedActionId, matchersObj.filter((matcher) => (matcher.actions.includes(referencedActionId))));
+      result.set(referencedActionId, matchersObj.filter(matcher => (matcher.actions.includes(referencedActionId))));
     }
   }
 
@@ -153,14 +176,14 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
 
 
 function formatOptions() {
-  const actions = document.getElementById('actionsInput').value;
-  const matchers = document.getElementById('matchersInput').value;
-  const settings = document.getElementById('settingsInput').value;
+  const actions = getHTMLTextAreaElement('actionsInput').value;
+  const matchers = getHTMLTextAreaElement('matchersInput').value;
+  const settings = getHTMLTextAreaElement('settingsInput').value;
 
   if (validateOptions()) {
-    document.getElementById('actionsInput').value = format(actions);
-    document.getElementById('matchersInput').value = format(matchers);
-    document.getElementById('settingsInput').value = format(settings);
+    getHTMLTextAreaElement('actionsInput').value = format(actions);
+    getHTMLTextAreaElement('matchersInput').value = format(matchers);
+    getHTMLTextAreaElement('settingsInput').value = format(settings);
   }
 }
 
@@ -169,9 +192,9 @@ function restoreOptions() {
   chrome.storage.sync.get(
       {actions: '', matchers: '', settings: ''},
       (items) => {
-        document.getElementById('actionsInput').value = format(items.actions);
-        document.getElementById('matchersInput').value = format(items.matchers);
-        document.getElementById('settingsInput').value = format(items.settings);
+        getHTMLTextAreaElement('actionsInput').value = format(items.actions);
+        getHTMLTextAreaElement('matchersInput').value = format(items.matchers);
+        getHTMLTextAreaElement('settingsInput').value = format(items.settings);
         validateOptions();
       },
   );
@@ -182,14 +205,14 @@ async function showDisplays() {
 
   let actionsObj = [];
   try {
-    actionsObj = JSON.parse(document.getElementById('actionsInput').value);
+    actionsObj = JSON.parse(getHTMLTextAreaElement('actionsInput').value);
   } catch (e) {
     // Ignore errors - if JSON is invalid, error message will be shown.
   }
   const displayMap = new Map(
-      [...new Set(actionsObj.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)]),
+    [...new Set(actionsObj.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)])
   );
-
+  
   // Sort displays by position on desktop -> left to right, then top to bottom
   displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
   displays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
@@ -197,10 +220,10 @@ async function showDisplays() {
   const displayTable = document.getElementById('displaysTable');
   const displayRowTemplate = document.getElementById('displaysTableRow');
   const displayTableInvalidRowTemplate = document.getElementById('displaysTableInvalidRow');
-
+  
   displayTable.replaceChildren();
   for (const display of displays) {
-    const displayRow = displayRowTemplate.cloneNode(true);
+    const displayRow = cloneNode(displayRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
 
     cols[0].replaceChildren(document.createTextNode(display.name));
@@ -212,19 +235,19 @@ async function showDisplays() {
     delete display.bounds.height;
     delete display.bounds.width;
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
-    cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map((action) => createTableChip(action.id))));
+    cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map(action => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 
   const missingDisplays = new Set([...displayMap].filter(([display, matched]) => matched === null).map(([display, matched]) => display));
   for (const display of missingDisplays) {
-    const displayRow = displayTableInvalidRowTemplate.cloneNode(true);
+    const displayRow = cloneNode(displayTableInvalidRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
 
     cols[0].replaceChildren(document.createTextNode(
-        `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`,
+      `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`
     ));
-    cols[1].replaceChildren(...(actionsObj.filter((action) => action.display === display).map((action) => createTableChip(action.id))));
+    cols[1].replaceChildren(...(actionsObj.filter((action) => action.display === display).map(action => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 }
@@ -238,9 +261,9 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
   // Prepare shortcuts map
   const commandIdPrefix = 'zzz-shortcut-';
   const shortcutsMap = new Map(
-      (await chrome.commands.getAll())
-          .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
-          .map((cmd) => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined']),
+    (await chrome.commands.getAll())
+       .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
+       .map(cmd => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined'])
   );
 
   // prepare matchers amount map
@@ -253,9 +276,9 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
 
   // prepare displays
   const displays = await Displays.getDisplays();
-
+  
   for (const [actionId, matchers] of matchersWithInvalidActionsMap) {
-    const displayRow = actionsTableInvalidRow.cloneNode(true);
+    const displayRow = cloneNode(actionsTableInvalidRow);
     const cols = [...displayRow.getElementsByTagName('td')];
 
     cols[0].replaceChildren(document.createTextNode(actionId));
@@ -264,10 +287,10 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     cols[3].replaceChildren(document.createTextNode('invalid'));
 
     actionsTableEl.appendChild(displayRow);
-  }
-
+  } 
+  
   for (const action of actionsObj) {
-    const displayRow = actionsTableRowTemplate.cloneNode(true);
+    const displayRow = cloneNode(actionsTableRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
     const display = Action.findDisplayByName(action.display, displays);
 
@@ -282,10 +305,10 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     cols[3].replaceChildren(...(matchersMap.get(action.id) || []).map((matcher) => createMatcherDiv(matcher)));
     cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
     cols[5].replaceChildren(document.createTextNode(
-      action.shortcutId ?
-        `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]` :
-        ''));
-
+      action.shortcutId
+        ? `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]`
+        : ''));
+    
     actionsTableEl.appendChild(displayRow);
   }
 }
@@ -295,7 +318,7 @@ function createMatcherDiv(matcher) {
 }
 
 function createTableChip(val) {
-  const el = document.createElement('div');
+  const el = document.createElement('div')
   el.textContent = val;
   el.classList.add('tableChip');
   return el;
