@@ -55,11 +55,11 @@ export class Matcher {
   }
 
   toString() {
-    return [ 
+    return [
       this.windowTypes ? `[${this.windowTypes}]` : null,
       this.anyTabUrl ? `${this.anyTabUrl}` : null,
       this.minTabsNum ? `>=${this.minTabsNum}` : null,
       this.maxTabsNum !== 1_000_000_000 ? `<=${this.maxTabsNum}` : null,
-    ].filter(Boolean).join(", ") || 'CATCH ALL';
+    ].filter(Boolean).join(', ') || 'CATCH ALL';
   }
 }
