@@ -33,6 +33,11 @@ npm run eslint
 npm run eslint-fix
 ```
 
+#### Check types
+```shell
+npm run typecheck
+```
+
 ### Testing
 
 ```shell
