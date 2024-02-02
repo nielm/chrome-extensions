@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Chrome extensions",
   "devDependencies": {
+    "@types/chrome": "^0.0.260",
     "eslint": "^8.56.0",
     "eslint-config-google": "^0.14.0",
     "typescript": "^5.3.3"
