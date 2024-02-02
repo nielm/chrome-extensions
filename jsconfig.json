@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES6",
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+  },
+  "include": ["window_manager/**/*"]
+}
