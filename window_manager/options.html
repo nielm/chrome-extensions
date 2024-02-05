@@ -68,7 +68,10 @@
       #buttons {
         margin: 16px auto;
       }
-
+      .helpText {
+        font-size: 14px;
+        line-height: 12px;
+      }
     </style>
   </head>
   <body>
@@ -80,8 +83,14 @@
           <th>ID</th>
           <th>primary</th>
           <th>internal</th>
-          <th>Reported resolution (native)</th>
-          <th>Actual resolution (scaled)</th>
+          <th>
+            Reported resolution (native)
+            <span class="helpText" title="The 'reported resolution' is used in the 'display' field of actions to identify the specific monitor.">ⓘ</span>
+          </th>
+          <th>
+            Actual resolution (scaled)
+            <span class="helpText" title="The 'actual resolution' is used in the 'column' and 'row' fields of actions to position the windows on the screen.">ⓘ</span>
+          </th>
           <th>Desktop arrangement</th>
           <th>Used in actions</th>
         </thead>
