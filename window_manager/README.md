@@ -20,6 +20,7 @@ if there is no active display matching this name.
   - `-internal` - display that is not internal.
   - `[name of the display]` - name of the display, e.g. `DELL U4021QW`.
   - `[id of the display]` - ChromeOS internal display ID, e.g. `73492720573986543`.
+  - `[resolution]` - Reported native resolution, e.g.: `3840x2160` (_hint - you can check resolution in the options page of the extension_).
 
   If you have multiple displays that match the display name, you can specify the
   index of the display to used as follows:
@@ -27,6 +28,7 @@ if there is no active display matching this name.
   - `-internal[0]` - the first non-internal display
   - `-internal[1]` - the second non-internal display
   - `HP Z27n[1]` - the second "HP Z27n" display
+  - `3840x2160[1]` - the second 4k monitor
 
   Displays are ordered by their desktop arrangement:
   from left to right, then from top to bottom. If no index is specified,

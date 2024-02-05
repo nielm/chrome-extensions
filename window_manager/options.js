@@ -140,7 +140,7 @@ async function validateOptions() {
   // At this point JSONs are valid and we can show parsed actions
   await showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap);
   await showDisplays();
-  
+
 
   if (matchersWithInvalidActionsMap.size > 0) {
     const statusEl = document.getElementById('matchersInputStatus');
@@ -244,10 +244,11 @@ async function showDisplays() {
     const displayRow = cloneNode(displayTableInvalidRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
 
-    cols[0].replaceChildren(document.createTextNode(
+    cols[0].replaceChildren(document.createTextNode(display));
+    cols[1].replaceChildren(document.createTextNode(
       `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`
     ));
-    cols[1].replaceChildren(...(actionsObj.filter((action) => action.display === display).map(action => createTableChip(action.id))));
+    cols[2].replaceChildren(...(actionsObj.filter((action) => action.display === display).map(action => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 }
