@@ -34,7 +34,7 @@ export class Action {
 
   /**
    * @param {*} json
-     @return {Action}
+   * @return {Action}
    */
   static from(json) {
     if (!json.id) {
@@ -56,7 +56,7 @@ export class Action {
 
   /**
    * @param {*} json
-     @return {void}
+   * @return {void}
    */
   static validate(json) {
     try {

@@ -4,6 +4,9 @@ export class Settings {
   triggerOnMonitorChange = false;
   triggerOnWindowCreated = false;
 
+  /**
+   * @return {Promise<Settings>}
+   */
   static load() {
     return chrome.storage.sync.get({settings: '{}'})
         .then((item) => item.settings)
@@ -12,10 +15,20 @@ export class Settings {
                          new Settings()));
   }
 
+  /**
+   * @param {*} json
+   * @return {void}
+   */
   static validate(json) {
     Settings.validateClass(new Settings(), json, ['popupButtonColor', 'popupBackgroundColor', 'triggerOnMonitorChange', 'triggerOnWindowCreated']);
   }
 
+  /**
+   * @param {Object} obj
+   * @param {*} json
+   * @param {string[]} optionalKeys
+   * @return {void}
+   */
   static validateClass(obj, json, optionalKeys = []) {
     const jsonKeys = new Set(Object.keys(json));
     const objKeys = new Set(Object.keys(obj));
