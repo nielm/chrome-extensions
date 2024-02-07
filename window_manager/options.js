@@ -7,6 +7,7 @@ import {Settings} from './classes/settings.js';
 const QUOTA_BYTES_PER_ITEM = 8192;
 
 /**
+ * @param {string} name
  * @return {HTMLTextAreaElement}
  */
 function getHTMLTextAreaElement(name) {
@@ -39,7 +40,7 @@ async function saveOptions() {
         {
           actions: compress(actions),
           matchers: compress(matchers),
-          settings: compress(settings)
+          settings: compress(settings),
         },
         () => {
           setStatus('Options saved');
@@ -113,7 +114,7 @@ function validateField(element, validateFn) {
 
   const jsonObj = JSON.parse(json);
   try {
-    for (let o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
+    for (const o of (Array.isArray(jsonObj) ? jsonObj : [jsonObj])) {
       validateFn(o);
     }
   } catch (e) {
@@ -167,7 +168,7 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
   const result = new Map();
   for (const referencedActionId of referencedActionIds) {
     if (!validActionIds.has(referencedActionId)) {
-      result.set(referencedActionId, matchersObj.filter(matcher => (matcher.actions.includes(referencedActionId))));
+      result.set(referencedActionId, matchersObj.filter((matcher) => (matcher.actions.includes(referencedActionId))));
     }
   }
 
@@ -210,9 +211,9 @@ async function showDisplays() {
     // Ignore errors - if JSON is invalid, error message will be shown.
   }
   const displayMap = new Map(
-    [...new Set(actionsObj.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)])
+      [...new Set(actionsObj.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)]),
   );
-  
+
   // Sort displays by position on desktop -> left to right, then top to bottom
   displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
   displays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
@@ -220,7 +221,7 @@ async function showDisplays() {
   const displayTable = document.getElementById('displaysTable');
   const displayRowTemplate = document.getElementById('displaysTableRow');
   const displayTableInvalidRowTemplate = document.getElementById('displaysTableInvalidRow');
-  
+
   displayTable.replaceChildren();
   for (const display of displays) {
     const displayRow = cloneNode(displayRowTemplate);
@@ -235,7 +236,7 @@ async function showDisplays() {
     delete display.bounds.height;
     delete display.bounds.width;
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
-    cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map(action => createTableChip(action.id))));
+    cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map((action) => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 
@@ -246,9 +247,9 @@ async function showDisplays() {
 
     cols[0].replaceChildren(document.createTextNode(display));
     cols[1].replaceChildren(document.createTextNode(
-      `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`
+        `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`,
     ));
-    cols[2].replaceChildren(...(actionsObj.filter((action) => action.display === display).map(action => createTableChip(action.id))));
+    cols[2].replaceChildren(...(actionsObj.filter((action) => action.display === display).map((action) => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
   }
 }
@@ -262,9 +263,9 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
   // Prepare shortcuts map
   const commandIdPrefix = 'zzz-shortcut-';
   const shortcutsMap = new Map(
-    (await chrome.commands.getAll())
-       .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
-       .map(cmd => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined'])
+      (await chrome.commands.getAll())
+          .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
+          .map((cmd) => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined']),
   );
 
   // prepare matchers amount map
@@ -277,7 +278,7 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
 
   // prepare displays
   const displays = await Displays.getDisplays();
-  
+
   for (const [actionId, matchers] of matchersWithInvalidActionsMap) {
     const displayRow = cloneNode(actionsTableInvalidRow);
     const cols = [...displayRow.getElementsByTagName('td')];
@@ -288,8 +289,8 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     cols[3].replaceChildren(document.createTextNode('invalid'));
 
     actionsTableEl.appendChild(displayRow);
-  } 
-  
+  }
+
   for (const action of actionsObj) {
     const displayRow = cloneNode(actionsTableRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
@@ -306,10 +307,10 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     cols[3].replaceChildren(...(matchersMap.get(action.id) || []).map((matcher) => createMatcherDiv(matcher)));
     cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
     cols[5].replaceChildren(document.createTextNode(
-      action.shortcutId
-        ? `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]`
-        : ''));
-    
+      action.shortcutId ?
+        `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]` :
+        ''));
+
     actionsTableEl.appendChild(displayRow);
   }
 }
@@ -319,7 +320,7 @@ function createMatcherDiv(matcher) {
 }
 
 function createTableChip(val) {
-  const el = document.createElement('div')
+  const el = document.createElement('div');
   el.textContent = val;
   el.classList.add('tableChip');
   return el;

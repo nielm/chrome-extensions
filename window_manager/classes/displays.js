@@ -1,3 +1,19 @@
+/**
+ * @typedef {Object} StrippedDisplay
+ * @property {number} id
+ * @property {string} name
+ * @property {boolean} isPrimary
+ * @property {boolean} isInternal
+ */
+
+/**
+ * @typedef {Object} Bounds
+ * @property {number} height
+ * @property {number} left
+ * @property {number} top
+ * @property {number} width
+ */
+
 export class Display {
   id;
   name;
@@ -21,6 +37,9 @@ export class Display {
 }
 
 export class Displays {
+  /**
+   * @return {Promise<void>}
+   */
   static async init() {
     console.group(`${new Date().toLocaleTimeString()} Displays: init`);
     const currentDisplays = await Displays.#getSavedDisplays();
@@ -28,7 +47,11 @@ export class Displays {
     console.groupEnd();
   }
 
-  // Returns true if the displays were changed since the last check.
+  /**
+   * Returns true if the displays were changed since the last check.
+   *
+   * @return {Promise<boolean>}
+   */
   static async displaysChanged() {
     const currentDisplaysPromise = Displays.getDisplays();
     const savedDisplays = await Displays.#getSavedDisplays();
@@ -39,8 +62,7 @@ export class Displays {
 
     if (JSON.stringify(savedDisplaysStripped) != JSON.stringify(currentDisplaysStripped)) {
       console.log(`${new Date().toLocaleTimeString()} Displays.displaysChanged:true - important fields were changed`);
-      await Displays.#setSavedDisplays(currentDisplays);
-      return true;
+      return Displays.#setSavedDisplays(currentDisplays).then(() => true);
     }
 
     // At this point we know that ids, names and primary/internal assignments has not changed.
@@ -72,19 +94,27 @@ export class Displays {
       return false;
     } else {
       console.log(`${new Date().toLocaleTimeString()} Displays.displaysChanged:true - all displays has workArea != bounds`);
-      await Displays.#setSavedDisplays(currentDisplays);
-      return true;
+      return Displays.#setSavedDisplays(currentDisplays).then(() => true);
     }
   }
 
-  // Returns list of attached displays.
+  /**
+   * Returns list of attached displays.
+   *
+   * @return {Promise<Display[]>}
+   */
   static async getDisplays() {
     return chrome.system.display.getInfo({}).then((displays) => (displays.map((d) => new Display(d))));
   }
 
-  // Returns saved displays from the storage.
-  // When storage is empty defaultValue displays will be saved and returned
-  // When defaultValue is not provided current displays will be used.
+  /**
+   * Returns saved displays from the storage.
+   * When storage is empty defaultValue displays will be saved and returned
+   * When defaultValue is not provided current displays will be used.
+   *
+   * @param {*} defaultValue
+   * @return {Promise<Display[]>}
+   */
   static async #getSavedDisplays(defaultValue = undefined) {
     const savedDisplays = await chrome.storage.session.get({displayData: ''})
         .then((item) => item.displayData);
@@ -92,14 +122,24 @@ export class Displays {
     return savedDisplays || await Displays.#setSavedDisplays(defaultValue || await Displays.getDisplays());
   }
 
-  // Saves current or provided displays to the storage
+  /**
+   * Saves current or provided displays to the storage
+   *
+   * @param {Display[]} displays
+   * @return {Promise<Display[]>}
+   */
   static async #setSavedDisplays(displays) {
     await chrome.storage.session.set({displayData: displays});
     console.log(`${new Date().toLocaleTimeString()} Saved:  ${JSON.stringify(displays)}`);
     return displays;
   }
 
-  // Returns display fields that identifies monitors
+  /**
+   * Returns display fields that identifies monitors
+   *
+   * @param {Display} display
+   * @return {StrippedDisplay}
+   */
   static #mapImportantFields(display) {
     return {
       id: display.id,
@@ -109,6 +149,11 @@ export class Displays {
     };
   }
 
+  /**
+   * @param {Bounds} d1
+   * @param {Bounds} d2
+   * @return {boolean}
+   */
   static #areDisplaySizesEqual(d1, d2) {
     return d1.height == d2.height &&
       d1.left == d2.left &&

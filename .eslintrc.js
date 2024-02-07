@@ -22,7 +22,11 @@ module.exports = {
     'sourceType': 'module',
   },
   'rules': {
+    'jsdoc/no-undefined-types': 1,
     'max-len': 'off',
     'require-jsdoc': 'off',
   },
+  'plugins': [
+    'jsdoc',
+  ],
 };
