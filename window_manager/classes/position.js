@@ -6,10 +6,18 @@ export class Position {
   // End defined as pixel value or percentage of screen
   end = '100%';
 
+  /**
+   * @param {*} json
+   * @return {Position}
+   */
   static from(json) {
     return Object.assign(new Position(), json);
   }
 
+  /**
+   * @param {*} json
+   * @return {void}
+   */
   static validate(json) {
     Settings.validateClass(new Position(), json, ['comment']);
   }
