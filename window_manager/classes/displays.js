@@ -6,14 +6,6 @@
  * @property {boolean} isInternal
  */
 
-/**
- * @typedef {Object} Bounds
- * @property {number} height
- * @property {number} left
- * @property {number} top
- * @property {number} width
- */
-
 export class Display {
   id;
   name;
@@ -150,8 +142,8 @@ export class Displays {
   }
 
   /**
-   * @param {Bounds} d1
-   * @param {Bounds} d2
+   * @param {chrome.system.display.Bounds} d1
+   * @param {chrome.system.display.Bounds} d2
    * @return {boolean}
    */
   static #areDisplaySizesEqual(d1, d2) {

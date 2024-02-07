@@ -8,6 +8,9 @@ export class Matcher {
   maxTabsNum = 1_000_000_000;
   actions;
 
+  /**
+   * @return {Promise<Matcher[]>}
+   */
   static loadAll() {
     return chrome.storage.sync.get({matchers: '[]'})
         .then((items) => items.matchers)
@@ -16,6 +19,10 @@ export class Matcher {
                         []));
   }
 
+  /**
+  * @param {*} json
+  * @return {Matcher}
+  */
   static from(json) {
     if (!json.actions) {
       console.error(json);
@@ -24,6 +31,10 @@ export class Matcher {
     return Object.assign(new Matcher(), json);
   }
 
+  /**
+  * @param {*} json
+  * @return {void}
+  */
   static validate(json) {
     try {
       Settings.validateClass(new Matcher(), json, ['windowTypes', 'anyTabUrl', 'minTabsNum', 'maxTabsNum', 'comment']);
@@ -32,6 +43,10 @@ export class Matcher {
     }
   }
 
+  /**
+  * @param {chrome.windows.Window} window
+  * @return {boolean}
+  */
   matches(window) {
     if (this.windowTypes?.length > 0 && !this.windowTypes?.includes(window.type)) {
       // console.log('Not matched: windowsType');
@@ -54,6 +69,9 @@ export class Matcher {
     return true;
   }
 
+  /**
+  * @return {string}
+  */
   toString() {
     return [
       this.windowTypes ? `[${this.windowTypes}]` : null,
