@@ -2,6 +2,17 @@ import {Display} from './displays.js';
 import {Position} from './position.js';
 import {Settings} from './settings.js';
 
+
+/**
+ * @typedef {Object} WindowsUpdate
+ * @property {number=} left
+ * @property {number=} top
+ * @property {number=} width
+ * @property {number=} height
+ * @property {string} state
+ * @property {boolean} focused
+ */
+
 export class Action {
   column;
   row;
@@ -21,6 +32,10 @@ export class Action {
                         []));
   }
 
+  /**
+   * @param {*} json
+     @return {Action}
+   */
   static from(json) {
     if (!json.id) {
       console.error(json);
@@ -39,6 +54,10 @@ export class Action {
     return Object.assign(new Action(), json);
   }
 
+  /**
+   * @param {*} json
+     @return {void}
+   */
   static validate(json) {
     try {
       Settings.validateClass(new Action(), json, ['menuName', 'shortcutId', 'comment']);
@@ -122,6 +141,11 @@ export class Action {
     }
   }
 
+
+  /**
+   * @param {Display[]} displays
+   * @return {WindowsUpdate}
+   */
   createUpdate(displays) {
     const display = this.findDisplay(displays);
     if (!display) {
