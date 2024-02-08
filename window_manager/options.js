@@ -2,6 +2,7 @@ import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Matcher} from './classes/matcher.js';
 import {Settings} from './classes/settings.js';
+import {checkNonUndefined} from './utils/preconditions.js';
 
 // As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
 const QUOTA_BYTES_PER_ITEM = 8192;
@@ -115,14 +116,14 @@ function validateSettings() {
  */
 function validateField(element, validateFn) {
   let json;
-  const statusEl = document.getElementById(element + 'InputStatus');
+  const statusEl = checkNonUndefined(document.getElementById(element + 'InputStatus'));
   statusEl.textContent = '';
   statusEl.removeAttribute('class');
 
   try {
     json = compress(getHTMLTextAreaElement(element + 'Input').value);
     const size = new TextEncoder().encode(JSON.stringify({[element]: json})).length;
-    document.getElementById(element + 'Counter').textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+    checkNonUndefined(document.getElementById(element + 'Counter')).textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
     if (size > QUOTA_BYTES_PER_ITEM) {
       throw new Error(`Configuration size ${size}b is greater than allowed: ${QUOTA_BYTES_PER_ITEM}b`);
     }
@@ -165,7 +166,7 @@ async function validateOptions() {
 
 
   if (matchersWithInvalidActionsMap.size > 0) {
-    const statusEl = document.getElementById('matchersInputStatus');
+    const statusEl = checkNonUndefined(document.getElementById('matchersInputStatus'));
     statusEl.classList.add('warning');
     statusEl.textContent = `Matchers refer to unknown Action ids: ${Array.from(matchersWithInvalidActionsMap.keys())}. See "Parsed actions" section for details.`;
 
@@ -196,13 +197,13 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
   return result;
 }
 
-/** @return {void} */
-function formatOptions() {
+/** @return {Promise<void>} */
+async function formatOptions() {
   const actions = getHTMLTextAreaElement('actionsInput').value;
   const matchers = getHTMLTextAreaElement('matchersInput').value;
   const settings = getHTMLTextAreaElement('settingsInput').value;
 
-  if (validateOptions()) {
+  if (await validateOptions()) {
     getHTMLTextAreaElement('actionsInput').value = format(actions);
     getHTMLTextAreaElement('matchersInput').value = format(matchers);
     getHTMLTextAreaElement('settingsInput').value = format(settings);
@@ -243,9 +244,9 @@ async function showDisplays() {
   displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
   displays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
 
-  const displayTable = document.getElementById('displaysTable');
-  const displayRowTemplate = document.getElementById('displaysTableRow');
-  const displayTableInvalidRowTemplate = document.getElementById('displaysTableInvalidRow');
+  const displayTable = checkNonUndefined(document.getElementById('displaysTable'));
+  const displayRowTemplate = checkNonUndefined(document.getElementById('displaysTableRow'));
+  const displayTableInvalidRowTemplate = checkNonUndefined(document.getElementById('displaysTableInvalidRow'));
 
   displayTable.replaceChildren();
   for (const display of displays) {
@@ -258,8 +259,6 @@ async function showDisplays() {
     cols[3].replaceChildren(document.createTextNode(display.isInternal.toString()));
     cols[4].replaceChildren(document.createTextNode(display.resolution));
     cols[5].replaceChildren(document.createTextNode(`${display.bounds.width}x${display.bounds.height}`));
-    delete display.bounds.height;
-    delete display.bounds.width;
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
     cols[7].replaceChildren(...(actionsObj.filter((action) => displayMap.get(action.display)?.id === display.id).map((action) => createTableChip(action.id))));
     displayTable.appendChild(displayRow);
@@ -286,17 +285,17 @@ async function showDisplays() {
  * @return {Promise<void>}
  */
 async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap) {
-  const actionsTableEl = document.getElementById('actionsTable');
-  const actionsTableRowTemplate = document.getElementById('actionsTableRow');
-  const actionsTableInvalidRow = document.getElementById('actionsTableInvalidRow');
+  const actionsTableEl = checkNonUndefined(document.getElementById('actionsTable'));
+  const actionsTableRowTemplate = checkNonUndefined(document.getElementById('actionsTableRow'));
+  const actionsTableInvalidRow = checkNonUndefined(document.getElementById('actionsTableInvalidRow'));
   actionsTableEl.replaceChildren();
 
   // Prepare shortcuts map
   const commandIdPrefix = 'zzz-shortcut-';
   const shortcutsMap = new Map(
       (await chrome.commands.getAll())
-          .filter((cmd) => cmd.name.startsWith(commandIdPrefix))
-          .map((cmd) => [parseInt(cmd.name.slice(commandIdPrefix.length), 10), cmd.shortcut || 'undefined']),
+          .filter((cmd) => cmd.name?.startsWith(commandIdPrefix))
+          .map((cmd) => [parseInt(cmd.name?.slice(commandIdPrefix.length) || '-1', 10), cmd.shortcut || 'undefined']),
   );
 
   // prepare matchers amount map
@@ -370,7 +369,7 @@ function createTableChip(val) {
  * @return {void}
  */
 function setStatus(text) {
-  const statusEl = document.getElementById('status');
+  const statusEl = checkNonUndefined(document.getElementById('status'));
   statusEl.textContent = text;
   setTimeout(() => {
     statusEl.textContent = '';
@@ -379,13 +378,13 @@ function setStatus(text) {
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.addEventListener('DOMContentLoaded', showDisplays);
-document.getElementById('save').addEventListener('click', saveOptions);
-document.getElementById('validate').addEventListener('click', validateOptions);
-document.getElementById('format').addEventListener('click', formatOptions);
+checkNonUndefined(document.getElementById('save')).addEventListener('click', saveOptions);
+checkNonUndefined(document.getElementById('validate')).addEventListener('click', validateOptions);
+checkNonUndefined(document.getElementById('format')).addEventListener('click', formatOptions);
 
-document.getElementById('actionsInput').addEventListener('keyup', maybeValidateActions);
-document.getElementById('matchersInput').addEventListener('keyup', maybeValidateMatchers);
-document.getElementById('settingsInput').addEventListener('keyup', maybeValidateSettings);
+checkNonUndefined(document.getElementById('actionsInput')).addEventListener('keyup', maybeValidateActions);
+checkNonUndefined(document.getElementById('matchersInput')).addEventListener('keyup', maybeValidateMatchers);
+checkNonUndefined(document.getElementById('settingsInput')).addEventListener('keyup', maybeValidateSettings);
 
 chrome.system.display.onDisplayChanged.addListener(showDisplays);
 

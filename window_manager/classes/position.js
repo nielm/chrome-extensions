@@ -50,10 +50,10 @@ export class Position {
     let start = this.maybeValuePercent(this.start, size);
     let end = this.maybeValuePercent(this.end, size);
 
-    if (isNaN(start)) {
+    if (start === undefined) {
       start = this.getValueNumber(this.start, size);
     }
-    if (isNaN(end)) {
+    if (end === undefined) {
       end = this.getValueNumber(this.end, size);
     }
 
@@ -66,7 +66,7 @@ export class Position {
    *
    * @param {number|string} value
    * @param {number} size
-   * @return {number}
+   * @return {number|undefined}
    */
   maybeValuePercent(value, size) {
     if (typeof value !== 'string') {

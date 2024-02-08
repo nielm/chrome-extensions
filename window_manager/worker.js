@@ -14,13 +14,20 @@ export async function updateWindowWithActions(actions) {
   const windowPromise = chrome.windows.getLastFocused();
   const displayPromise = Displays.getDisplays();
 
+  const window = await windowPromise;
+  if (window.id === undefined) {
+    console.error('Last focused window doesn`t have valid id. Cannot apply actions.');
+    return;
+  }
+
   const windowUpdate = {};
   // merge actions - createUpdate only returns values for actions with valid displays.
   for (const action of actions) {
     Object.assign(windowUpdate, action.createUpdate(await displayPromise));
   }
+
   if (Object.keys(windowUpdate).length > 0 ) {
-    chrome.windows.update((await windowPromise).id, windowUpdate);
+    chrome.windows.update(window.id, windowUpdate);
   }
 }
 
@@ -74,6 +81,7 @@ async function updateWindowsFromArray(windows) {
   console.log('Got valid matchers for current displays: ', matchers);
 
   // orderArray[i] will contain all window ids matched by matcher number i
+  /** @type {Array<Array<number>>} */
   const orderArray = matchers.map(() => []);
   // actionMap will contain action (windowUpdate object) and use window id as key.
   const windowUpdateMap = new Map();
@@ -85,11 +93,15 @@ async function updateWindowsFromArray(windows) {
       if (matchers[i].matches(window)) {
         for (const actionName of matchers[i].actions) {
           // we only have valid actions in the action list.
-          console.log(`Matched ${actionName} to window:`, (window.tabs[0]?.url || window.tabs[0]?.pendingUrl), window.tabs);
+          console.log(`Matched ${actionName} to window:`, (window.tabs?.at(0)?.url || window.tabs?.at(0)?.pendingUrl), window.tabs);
 
-          orderArray[i].push(window.id);
-          // merge window updates from tbis action with existing window updates.
-          Object.assign(windowUpdate, actions.get(actionName));
+          if (window.id !== undefined) {
+            orderArray[i].push(window.id);
+            // merge window updates from this action with existing window updates.
+            Object.assign(windowUpdate, actions.get(actionName));
+          } else {
+            console.error('Windows id is undefined');
+          }
         }
       }
     }

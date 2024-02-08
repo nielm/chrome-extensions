@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2019",
+    "target": "es2022",
     "checkJs": true,
     "allowJs": true,
     "noEmit": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
   },
   "include": ["**/*"]
 }

@@ -166,7 +166,7 @@ export class Action {
 
   /**
    * @param {Display[]} displays
-   * @return {WindowsUpdate}
+   * @return {WindowsUpdate|null}
    */
   createUpdate(displays) {
     const display = this.findDisplay(displays);

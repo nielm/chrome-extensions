@@ -4,4 +4,4 @@ script.setAttribute('src', chrome.runtime.getURL('stop_music_worker.js'));
 
 (document.head || document.documentElement).appendChild(script);
 
-script.parentNode.removeChild(script);
+script.parentNode?.removeChild(script);

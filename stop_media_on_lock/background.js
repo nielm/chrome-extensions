@@ -7,7 +7,7 @@ function onIdle(newIdleState) {
   if (newIdleState === 'locked') {
     chrome.tabs.query({}, function(tabs) {
       tabs.forEach(function(tab) {
-        if (tab.audible) {
+        if (tab.id && tab.audible) {
           console.log('Muting tab: ' + tab.url);
           chrome.scripting.executeScript({
             target: {tabId: tab.id, allFrames: true},

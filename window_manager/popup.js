@@ -1,6 +1,7 @@
 import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
+import {checkNonUndefined} from './utils/preconditions.js';
 
 /** @return {void} */
 function organiseClick() {
@@ -18,7 +19,7 @@ async function createActionsMenu() {
       .filter((action) => action.menuName)
       .filter((action) => action.findDisplay(displays)!=null);
 
-  const actionsEl = document.getElementById('actions');
+  const actionsEl = checkNonUndefined(document.getElementById('actions'));
   for (const action of actions) {
     const actionEl = document.createElement('button');
     actionEl.textContent = action.menuName;
@@ -41,4 +42,4 @@ async function setCss(settings) {
 }
 
 document.addEventListener('DOMContentLoaded', createActionsMenu);
-document.getElementById('organise').addEventListener('click', organiseClick);
+checkNonUndefined(document.getElementById('organise')).addEventListener('click', organiseClick);

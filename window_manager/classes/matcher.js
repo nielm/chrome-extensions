@@ -60,20 +60,20 @@ export class Matcher {
   * @return {boolean}
   */
   matches(window) {
-    if (this.windowTypes?.length > 0 && !this.windowTypes?.includes(window.type)) {
+    if (this.windowTypes?.length > 0 && !this.windowTypes?.includes(window.type || '')) {
       // console.log('Not matched: windowsType');
       return false;
     }
     if (this.anyTabUrl &&
-        !window.tabs.some((tab) => ((tab.url || tab.pendingUrl).toLowerCase().includes(this.anyTabUrl.toLowerCase())))) {
+        !window.tabs?.some((tab) => ((tab.url || tab.pendingUrl)?.toLowerCase()?.includes(this.anyTabUrl.toLowerCase())))) {
       // console.log('Not matched: anyTabUrl');
       return false;
     }
-    if (window.tabs.length < this.minTabsNum) {
+    if ((window.tabs?.length || 0) < this.minTabsNum) {
       // console.log('Not matched: minTabsNum');
       return false;
     }
-    if (window.tabs.length > this.maxTabsNum) {
+    if ((window.tabs?.length || 0) > this.maxTabsNum) {
       // console.log('Not matched: maxTabsNum');
       return false;
     }
