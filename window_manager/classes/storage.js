@@ -1,6 +1,8 @@
+/** Storage class */
 export class Storage {
   static #instance;
 
+  /** constructor */
   constructor() {
     // Checking if the instance already exists
     if (Storage.#instance) {
@@ -10,6 +12,6 @@ export class Storage {
     console.log('Storage instance created');
   }
 
-  saveAll(actions, matchers, settings) {
-  }
+  // saveAll(actions, matchers, settings) {
+  // }
 }

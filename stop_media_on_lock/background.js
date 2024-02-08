@@ -1,3 +1,7 @@
+/**
+ * @param {string} newIdleState
+ * @return {void}
+ */
 function onIdle(newIdleState) {
   console.log(newIdleState);
   if (newIdleState === 'locked') {

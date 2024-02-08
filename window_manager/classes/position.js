@@ -6,6 +6,7 @@ import {Settings} from './settings.js';
  * @property {number} end
  */
 
+/** Position class */
 export class Position {
   /**
    * Start defined as pixel value or percentage of screen
@@ -13,7 +14,7 @@ export class Position {
    * @type {number|string}
    */
   start = 0;
-  
+
   /**
    * End defined as pixel value or percentage of screen
    *

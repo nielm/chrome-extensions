@@ -1,6 +1,9 @@
 import {Settings} from './settings.js';
 
-// Default values will match all the windows
+/**
+ * Matcher class.
+ * Default values will match all the windows.
+ */
 export class Matcher {
   /** @type {string[]} */
   windowTypes;

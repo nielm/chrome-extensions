@@ -108,7 +108,11 @@ function validateSettings() {
   return validateField('settings', Settings.validate);
 }
 
-/** @return {boolean} */
+/**
+ * @param {string} element
+ * @param {function(string): void} validateFn
+ * @return {boolean}
+ */
 function validateField(element, validateFn) {
   let json;
   const statusEl = document.getElementById(element + 'InputStatus');

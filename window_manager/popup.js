@@ -29,7 +29,10 @@ async function createActionsMenu() {
   setCss(await settingsPromise);
 }
 
-/** @return {Promise<void>} */
+/**
+ * @param {Settings} settings
+ * @return {Promise<void>}
+ */
 async function setCss(settings) {
   for (const element of document.querySelectorAll('button')) {
     element.style.backgroundColor = settings.popupButtonColor;

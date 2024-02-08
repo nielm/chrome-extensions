@@ -1,3 +1,4 @@
+/** Settings class */
 export class Settings {
   /** @type {string} */
   popupButtonColor = 'f9f9f9';

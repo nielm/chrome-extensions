@@ -1,13 +1,14 @@
 /**
  * @typedef {Object} StrippedDisplay
- * @property {number} id
+ * @property {string} id
  * @property {string} name
  * @property {boolean} isPrimary
  * @property {boolean} isInternal
  */
 
+/** Display class */
 export class Display {
-  /** @type {number} */
+  /** @type {string} */
   id;
 
   /** @type {string} */
@@ -28,6 +29,9 @@ export class Display {
   /** @type {string} */
   resolution;
 
+  /**
+   * @param {chrome.system.display.DisplayInfo} display
+   */
   constructor(display) {
     this.id = display.id;
     this.name = display.name,
@@ -41,6 +45,7 @@ export class Display {
   }
 }
 
+/** Displays class */
 export class Displays {
   /**
    * @return {Promise<void>}

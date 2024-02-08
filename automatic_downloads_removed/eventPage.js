@@ -1,3 +1,7 @@
+/**
+ * @param {string} newState
+ * @return {void}
+ */
 function scanDownloadsOnState(newState) {
   if (newState === 'idle' || newState === 'locked') {
     console.log(new Date() + ' ScanDownloads OnState: ' + newState);
@@ -5,8 +9,12 @@ function scanDownloadsOnState(newState) {
   }
 }
 
+/**
+ * @param {chrome.downloads.DownloadItem[]} downloadItems
+ * @return {void}
+ */
 function processDownloads(downloadItems) {
-  timestamp = (new Date()).getTime() - 86400000; // 86400000ms = 24h
+  const timestamp = (new Date()).getTime() - 86400000; // 86400000ms = 24h
   for (let i = 0; i < downloadItems.length; i++) {
     if (downloadItems[i].state === 'complete' && new Date(downloadItems[i].endTime).getTime() < timestamp) {
       console.log(new Date() + ' Deleting: ' + downloadItems[i].filename);

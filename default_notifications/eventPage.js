@@ -1,3 +1,7 @@
+/**
+ * @param {Object} details
+ * @return {void}
+ */
 function checkNotificationsOnState(details) {
   if (details.reason == 'install' || details.reason == 'update') {
     console.log(new Date() + ' CheckNotifications OnState: ' + details.reason);

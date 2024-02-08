@@ -7,5 +7,5 @@
     "noEmit": true,
     "strictNullChecks": false,
   },
-  "include": ["window_manager/**/*"]
+  "include": ["**/*"]
 }

@@ -16,6 +16,7 @@ import {Settings} from './settings.js';
  * @property {boolean} focused
  */
 
+/** Action class */
 export class Action {
   /** @type {Position} */
   column;

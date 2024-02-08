@@ -22,9 +22,16 @@ module.exports = {
     'sourceType': 'module',
   },
   'rules': {
-    'jsdoc/no-undefined-types': 1,
+    'jsdoc/no-undefined-types': [
+      1,
+      {
+        'definedTypes': [
+          'chrome',
+        ],
+      },
+    ],
     'max-len': 'off',
-    'require-jsdoc': 'off',
+    'require-jsdoc': 'error',
   },
   'plugins': [
     'jsdoc',
