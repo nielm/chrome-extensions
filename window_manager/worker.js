@@ -4,7 +4,12 @@ import {Matcher} from './classes/matcher.js';
 
 const UPDATE_TIMEOUT_MS = 5;
 
-// Applies specified actions to the focused window
+/**
+ * Applies specified actions to the focused window
+ *
+ * @param {Action[]} actions
+ * @return {Promise<void>}
+ */
 export async function updateWindowWithActions(actions) {
   const windowPromise = chrome.windows.getLastFocused();
   const displayPromise = Displays.getDisplays();
@@ -19,15 +24,25 @@ export async function updateWindowWithActions(actions) {
   }
 }
 
-// Applies all matched actions to the specified windowId
+/**
+ * Applies all matched actions to the specified windowId
+ *
+ * @param {number} windowId
+ * @return {Promise<void>}
+ */
 export async function updateWindowWithMatchedActions(windowId) {
   updateWindowsFromArray((await chrome.windows.getAll({populate: true})).filter((window) => window.id === windowId));
 }
 
+/** @return {Promise<void>} */
 export async function updateWindows() {
   updateWindowsFromArray(await chrome.windows.getAll({populate: true}));
 }
 
+/**
+ * @param {chrome.windows.Window[]} windows
+ * @return {Promise<void>}
+ */
 async function updateWindowsFromArray(windows) {
   const displaysPromise = Displays.getDisplays();
   const actionsPromise = Action.loadAll();

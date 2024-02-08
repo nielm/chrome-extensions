@@ -2,10 +2,12 @@ import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 
+/** @return {void} */
 function organiseClick() {
   chrome.runtime.sendMessage({command: 'updateWindows', actionId: null});
 }
 
+/** @return {Promise<void>} */
 async function createActionsMenu() {
   // Only create buttons for actions which have valid displays.
   const settingsPromise = Settings.load();
@@ -27,6 +29,7 @@ async function createActionsMenu() {
   setCss(await settingsPromise);
 }
 
+/** @return {Promise<void>} */
 async function setCss(settings) {
   for (const element of document.querySelectorAll('button')) {
     element.style.backgroundColor = settings.popupButtonColor;

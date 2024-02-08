@@ -30,6 +30,7 @@ function cloneNode(el) {
   return result;
 }
 
+/** @return {Promise<void>} */
 async function saveOptions() {
   const actions = getHTMLTextAreaElement('actionsInput').value;
   const matchers = getHTMLTextAreaElement('matchersInput').value;
@@ -49,15 +50,24 @@ async function saveOptions() {
   }
 }
 
+/**
+ * @param {string} value
+ * @return {string}
+ */
 function compress(value) {
   return JSON.stringify(JSON.parse(value));
 }
 
+/**
+ * @param {string} value
+ * @return {string}
+ */
 function format(value) {
   return JSON.stringify(JSON.parse(value), undefined, 2);
 }
 
 let maybeValidateActionsTimer = undefined;
+/** @return {void} */
 function maybeValidateActions() {
   if (maybeValidateActionsTimer) {
     clearTimeout(maybeValidateActionsTimer);
@@ -66,6 +76,7 @@ function maybeValidateActions() {
 }
 
 let maybeValidateMatchersTimer = undefined;
+/** @return {void} */
 function maybeValidateMatchers() {
   if (maybeValidateMatchersTimer) {
     clearTimeout(maybeValidateMatchersTimer);
@@ -74,6 +85,7 @@ function maybeValidateMatchers() {
 }
 
 let maybeValidateSettingsTimer = undefined;
+/** @return {void} */
 function maybeValidateSettings() {
   if (maybeValidateSettingsTimer) {
     clearTimeout(maybeValidateSettingsTimer);
@@ -81,18 +93,22 @@ function maybeValidateSettings() {
   maybeValidateSettingsTimer = setTimeout(validateSettings, 100, false);
 }
 
+/** @return {boolean} */
 function validateActions() {
   return validateField('actions', Action.validate);
 }
 
+/** @return {boolean} */
 function validateMatchers() {
   return validateField('matchers', Matcher.validate);
 }
 
+/** @return {boolean} */
 function validateSettings() {
   return validateField('settings', Settings.validate);
 }
 
+/** @return {boolean} */
 function validateField(element, validateFn) {
   let json;
   const statusEl = document.getElementById(element + 'InputStatus');
@@ -126,6 +142,7 @@ function validateField(element, validateFn) {
   return true;
 }
 
+/** @return {Promise<boolean>} */
 async function validateOptions() {
   // Use single "&" to make sure that all methods are called
   if (!((validateActions() ? 1 : 0) & (validateMatchers() ? 1 : 0) & (validateSettings() ? 1 : 0))) {
@@ -175,7 +192,7 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
   return result;
 }
 
-
+/** @return {void} */
 function formatOptions() {
   const actions = getHTMLTextAreaElement('actionsInput').value;
   const matchers = getHTMLTextAreaElement('matchersInput').value;
@@ -188,7 +205,10 @@ function formatOptions() {
   }
 }
 
-// Restores the preferences from chrome.storage.
+/**
+ * Restores the preferences from chrome.storage.
+ * @return {void}
+ */
 function restoreOptions() {
   chrome.storage.sync.get(
       {actions: '', matchers: '', settings: ''},
@@ -201,6 +221,7 @@ function restoreOptions() {
   );
 }
 
+/** @return {Promise<void>} */
 async function showDisplays() {
   const displays = await Displays.getDisplays();
 
@@ -254,6 +275,12 @@ async function showDisplays() {
   }
 }
 
+/**
+ * @param {Action[]} actionsObj
+ * @param {Matcher[]} matchersObj
+ * @param {Map<string, any>} matchersWithInvalidActionsMap
+ * @return {Promise<void>}
+ */
 async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap) {
   const actionsTableEl = document.getElementById('actionsTable');
   const actionsTableRowTemplate = document.getElementById('actionsTableRow');
@@ -315,10 +342,18 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
   }
 }
 
+/**
+ * @param {Matcher} matcher
+ * @return {HTMLElement}
+ */
 function createMatcherDiv(matcher) {
   return createTableChip(Matcher.from(matcher).toString());
 }
 
+/**
+ * @param {string} val
+ * @return {HTMLElement}
+ */
 function createTableChip(val) {
   const el = document.createElement('div');
   el.textContent = val;
@@ -326,6 +361,10 @@ function createTableChip(val) {
   return el;
 }
 
+/**
+ * @param {string} text
+ * @return {void}
+ */
 function setStatus(text) {
   const statusEl = document.getElementById('status');
   statusEl.textContent = text;
