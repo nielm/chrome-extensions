@@ -5,6 +5,7 @@
     "checkJs": true,
     "allowJs": true,
     "noEmit": true,
+    "strictNullChecks": false,
   },
   "include": ["window_manager/**/*"]
 }

@@ -1,9 +1,24 @@
 import {Settings} from './settings.js';
 
+/**
+ * @typedef {Object} PixelPosition
+ * @property {number} start
+ * @property {number} end
+ */
+
 export class Position {
-  // Start defined as pixel value or percentage of screen
+  /**
+   * Start defined as pixel value or percentage of screen
+   *
+   * @type {number|string}
+   */
   start = 0;
-  // End defined as pixel value or percentage of screen
+  
+  /**
+   * End defined as pixel value or percentage of screen
+   *
+   * @type {number|string}
+   */
   end = '100%';
 
   /**
@@ -22,9 +37,14 @@ export class Position {
     Settings.validateClass(new Position(), json, ['comment']);
   }
 
-  // size: amount of pixels that can be used:
-  //   - returned start and end are guarantted to be in [0, size] range
-  //   - size is used to calculate percentages
+  /**
+   * size: amount of pixels that can be used:
+   *   - returned start and end are guarantted to be in [0, size] range
+   *   - size is used to calculate percentages
+   *
+   * @param {number} size
+   * @return {PixelPosition}
+   */
   calculate(size) {
     let start = this.maybeValuePercent(this.start, size);
     let end = this.maybeValuePercent(this.end, size);
@@ -39,8 +59,14 @@ export class Position {
     return {start, end};
   }
 
-  // Will return percentage value multiplied by size or undefined if not a percent.
-  // Note: not using "null" as isNaN(null) == false
+  /**
+   * Will return percentage value multiplied by size or undefined if not a percent.
+   * Note: not using "null" as isNaN(null) == false
+   *
+   * @param {number|string} value
+   * @param {number} size
+   * @return {number}
+   */
   maybeValuePercent(value, size) {
     if (typeof value !== 'string') {
       return undefined;
@@ -56,6 +82,11 @@ export class Position {
     return Math.floor(size * percent / 100);
   }
 
+  /**
+   * @param {number|string} value
+   * @param {number} size
+   * @return {number}
+   */
   getValueNumber(value, size) {
     if (typeof value !== 'number') {
       throw new Error(`Value ${value} should be string or a number.`);

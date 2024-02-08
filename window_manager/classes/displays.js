@@ -7,12 +7,25 @@
  */
 
 export class Display {
+  /** @type {number} */
   id;
+
+  /** @type {string} */
   name;
+
+  /** @type {boolean} */
   isPrimary;
+
+  /** @type {boolean} */
   isInternal;
+
+  /** @type {chrome.system.display.Bounds} */
   bounds;
+
+  /** @type {chrome.system.display.Bounds} */
   workArea;
+
+  /** @type {string} */
   resolution;
 
   constructor(display) {

@@ -228,9 +228,9 @@ async function showDisplays() {
     const cols = [...displayRow.getElementsByTagName('td')];
 
     cols[0].replaceChildren(document.createTextNode(display.name));
-    cols[1].replaceChildren(document.createTextNode(display.id));
-    cols[2].replaceChildren(document.createTextNode(display.isPrimary));
-    cols[3].replaceChildren(document.createTextNode(display.isInternal));
+    cols[1].replaceChildren(document.createTextNode(display.id.toString()));
+    cols[2].replaceChildren(document.createTextNode(display.isPrimary.toString()));
+    cols[3].replaceChildren(document.createTextNode(display.isInternal.toString()));
     cols[4].replaceChildren(document.createTextNode(display.resolution));
     cols[5].replaceChildren(document.createTextNode(`${display.bounds.width}x${display.bounds.height}`));
     delete display.bounds.height;

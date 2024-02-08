@@ -37,12 +37,15 @@ async function updateWindowsFromArray(windows) {
 
   console.groupCollapsed(`${new Date().toLocaleTimeString()} updateWindowsFromArray`);
 
-  // create a map of action name -> windowUpdate object for only actions valid for the current set of displays:
   const actions = new Map(
       (await actionsPromise)
-          .map((a) => [a.id, a.createUpdate(displays)])
-      // createUpdate returns null when no matching display.
-          .filter((pair) => pair[1] != null ));
+          .map((a) => [a.id, a.createUpdate(displays)]));
+  // Workaround for the TS compiler - cannot filter null values directly in array: TS2769
+  actions.forEach((value, key) => {
+    if (value === null) {
+      actions.delete(key);
+    }
+  });
   console.log('Got valid actions for current displays: ', [...actions.keys()]);
 
   let matchers = await matchersPromise;

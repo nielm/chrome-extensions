@@ -1,7 +1,14 @@
 export class Settings {
+  /** @type {string} */
   popupButtonColor = 'f9f9f9';
+
+  /** @type {string} */
   popupBackgroundColor = 'white';
+
+  /** @type {boolean} */
   triggerOnMonitorChange = false;
+
+  /** @type {boolean} */
   triggerOnWindowCreated = false;
 
   /**

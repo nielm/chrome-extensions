@@ -2,10 +2,19 @@ import {Settings} from './settings.js';
 
 // Default values will match all the windows
 export class Matcher {
+  /** @type {string[]} */
   windowTypes;
+
+  /** @type {string} */
   anyTabUrl;
+
+  /** @type {number} */
   minTabsNum = 0;
+
+  /** @type {number} */
   maxTabsNum = 1_000_000_000;
+
+  /** @type {string[]} */
   actions;
 
   /**

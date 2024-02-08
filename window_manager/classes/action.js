@@ -4,6 +4,9 @@ import {Settings} from './settings.js';
 
 
 /**
+ * Object as defined here:
+ * https://developer.chrome.com/docs/extensions/reference/api/windows#parameters_6
+ *
  * @typedef {Object} WindowsUpdate
  * @property {number=} left
  * @property {number=} top
@@ -14,16 +17,34 @@ import {Settings} from './settings.js';
  */
 
 export class Action {
+  /** @type {Position} */
   column;
+
+  /** @type {Position} */
   row;
-  // identifier of the action. It used in matchers.
+
+  /**
+   * Identifier of the action. It used in matchers.
+   * @type {string}
+   */
   id;
-  // id of the display, action will not be performed if display doesn't exist
-  // see findDisplayByName for details
+
+  /**
+   * id of the display, action will not be performed if display doesn't exist
+   * see findDisplayByName for details
+   * @type {string}
+   */
   display;
+
+  /** @type {string} */
   menuName;
+
+  /** @type {number} */
   shortcutId;
 
+  /**
+   * @return {Promise<Action[]>}
+   */
   static loadAll() {
     return chrome.storage.sync.get({actions: '[]'})
         .then((items) => items.actions)
