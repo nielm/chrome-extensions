@@ -7,6 +7,5 @@
     "noEmit": true,
     "strictNullChecks": true,
   },
-  "include": ["**/*.js"],
-  "exclude": ["**/jsoneditor/**/*.js"]
+  "exclude": ["./window_manager/jsoneditor/*", "node_modules"]
 }
