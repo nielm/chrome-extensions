@@ -1,6 +1,7 @@
 import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
+import {Storage} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
 
 /** @return {void} */
@@ -10,6 +11,7 @@ function organiseClick() {
 
 /** @return {Promise<void>} */
 async function createActionsMenu() {
+  new Storage();
   // Only create buttons for actions which have valid displays.
   const settingsPromise = Settings.load();
   const actionsPromise = Action.loadAll();

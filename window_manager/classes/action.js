@@ -1,6 +1,7 @@
 import {Display} from './displays.js';
 import {Position} from './position.js';
 import {Settings} from './settings.js';
+import {validateClass} from '../utils/validation.js';
 
 
 /**
@@ -18,11 +19,8 @@ import {Settings} from './settings.js';
 
 /** Action class */
 export class Action {
-  /** @type {Position} */
-  column;
-
-  /** @type {Position} */
-  row;
+  /** @type {string} */
+  comment;
 
   /**
    * Identifier of the action. It used in matchers.
@@ -43,6 +41,19 @@ export class Action {
   /** @type {number} */
   shortcutId;
 
+  /** @type {Position} */
+  column;
+
+  /** @type {Position} */
+  row;
+
+  /** @return {void} */
+  validate() {
+    validateClass(new Action(), this, ['menuName', 'shortcutId', 'comment']);
+    this.column?.validate();
+    this.row?.validate();
+  }
+
   /**
    * @return {Promise<Action[]>}
    */
@@ -55,18 +66,12 @@ export class Action {
   }
 
   /**
+   * Creates object from json string without validation.
+   *
    * @param {*} json
    * @return {Action}
    */
   static from(json) {
-    if (!json.id) {
-      console.error(json);
-      throw new Error('action id not defined');
-    }
-    if (!json.display) {
-      console.error(json);
-      throw new Error('display id not defined');
-    }
     if (json.column) {
       json.column = Object.assign(new Position(), json.column);
     }

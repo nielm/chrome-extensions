@@ -1,10 +1,17 @@
 import {Settings} from './settings.js';
+import {validateClass} from '../utils/validation.js';
 
 /**
  * Matcher class.
  * Default values will match all the windows.
  */
 export class Matcher {
+  /** @type {string} */
+  comment;
+
+  /** @type {string[]} */
+  actions;
+
   /** @type {string[]} */
   windowTypes;
 
@@ -12,13 +19,15 @@ export class Matcher {
   anyTabUrl;
 
   /** @type {number} */
-  minTabsNum = 0;
+  minTabsNum;
 
   /** @type {number} */
-  maxTabsNum = 1_000_000_000;
+  maxTabsNum;
 
-  /** @type {string[]} */
-  actions;
+  /** @return {void} */
+  validate() {
+    validateClass(new Matcher(), this, ['windowTypes', 'anyTabUrl', 'minTabsNum', 'maxTabsNum', 'comment']);
+  }
 
   /**
    * @return {Promise<Matcher[]>}
@@ -32,14 +41,12 @@ export class Matcher {
   }
 
   /**
-  * @param {*} json
-  * @return {Matcher}
-  */
+   * Creates object from json string without validation.
+   *
+   * @param {*} json
+   * @return {Matcher}
+   */
   static from(json) {
-    if (!json.actions) {
-      console.error(json);
-      throw new Error('action for matcher not defined');
-    }
     return Object.assign(new Matcher(), json);
   }
 
@@ -69,11 +76,11 @@ export class Matcher {
       // console.log('Not matched: anyTabUrl');
       return false;
     }
-    if ((window.tabs?.length || 0) < this.minTabsNum) {
+    if ((window.tabs?.length || 0) < (this.minTabsNum || 0)) {
       // console.log('Not matched: minTabsNum');
       return false;
     }
-    if ((window.tabs?.length || 0) > this.maxTabsNum) {
+    if ((window.tabs?.length || 0) > (this.maxTabsNum || 1_000_000_000)) {
       // console.log('Not matched: maxTabsNum');
       return false;
     }
@@ -89,7 +96,7 @@ export class Matcher {
       this.windowTypes ? `[${this.windowTypes}]` : null,
       this.anyTabUrl ? `${this.anyTabUrl}` : null,
       this.minTabsNum ? `>=${this.minTabsNum}` : null,
-      this.maxTabsNum !== 1_000_000_000 ? `<=${this.maxTabsNum}` : null,
+      this.maxTabsNum ? `<=${this.maxTabsNum}` : null,
     ].filter(Boolean).join(', ') || 'CATCH ALL';
   }
 }

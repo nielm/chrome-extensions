@@ -1,4 +1,6 @@
 import {Settings} from './settings.js';
+import {validateClass} from '../utils/validation.js';
+
 
 /**
  * @typedef {Object} PixelPosition
@@ -13,16 +15,24 @@ export class Position {
    *
    * @type {number|string}
    */
-  start = 0;
+  start;
 
   /**
    * End defined as pixel value or percentage of screen
    *
    * @type {number|string}
    */
-  end = '100%';
+  end;
+
+  /** @return {void} */
+  validate() {
+    validateClass(new Position(), this, ['comment']);
+  }
+
 
   /**
+   * Creates object from json string without validation.
+   *
    * @param {*} json
    * @return {Position}
    */
