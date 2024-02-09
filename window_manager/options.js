@@ -42,12 +42,12 @@ function setWarning(field, message) {
  */
 function getJsonTextFromEditor(editor) {
   const content = editor.get();
-  if("text" in content && content.text) {
+  if ('text' in content && content.text) {
     return content.text;
-  } if("json" in content && content.json) {
+  } if ('json' in content && content.json) {
     return JSON.stringify(content.json, undefined, 2);
   } else {
-    throw new Error("unexpected content from json Editor: "+content);
+    throw new Error('unexpected content from json Editor: '+content);
   }
 }
 
@@ -329,7 +329,7 @@ function onPageLoad() {
     matchersEditor.set({text: config.matchers});
     settingsEditor.set({text: config.settings});
     // Remove Loading markers.
-    [...document.getElementsByClassName("loading")].forEach((e) => e.remove());
+    [...document.getElementsByClassName('loading')].forEach((e) => e.remove());
     validateEverything();
   });
 }
