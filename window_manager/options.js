@@ -4,25 +4,13 @@ import {matchMatcherToAction, Matcher, MatcherWithAction} from './classes/matche
 import {Storage, StorageToJson} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
 import {combine2} from './utils/promise.js';
-
+import {JSONEditor, Mode} from './jsoneditor/standalone.js';
 
 /**
  * @typedef {import('./classes/storage.js').ValidatedConfiguration} ValidatedConfiguration
  */
 
 const storage = new Storage();
-
-/**
- * @param {string} name
- * @return {HTMLTextAreaElement}
- */
-function getHTMLTextAreaElement(name) {
-  const result = document.getElementById(name);
-  if (!(result instanceof HTMLTextAreaElement)) {
-    throw new Error(`Expected '${name}' to be a HTMLTextAreaElement, was: ${result}`);
-  }
-  return result;
-}
 
 /**
  * @param {HTMLElement} el
@@ -52,15 +40,30 @@ function setWarning(field, message) {
 }
 
 /**
+ * @param {JSONEditor} editor
+ * @return {String}
+ */
+function getJsonTextFromEditor(editor) {
+  const content = editor.get();
+  if ('text' in content && content.text) {
+    return content.text;
+  } if ('json' in content && content.json) {
+    return JSON.stringify(content.json, undefined, 2);
+  } else {
+    throw new Error('unexpected content from json Editor: '+content);
+  }
+}
+
+/**
  * Performs simple validation of json text.
  *
  * @return {ValidatedConfiguration}
  */
 function validateJson() {
   const config = {
-    actions: getHTMLTextAreaElement('actionsInput').value,
-    matchers: getHTMLTextAreaElement('matchersInput').value,
-    settings: getHTMLTextAreaElement('settingsInput').value,
+    actions: getJsonTextFromEditor(actionsEditor),
+    matchers: getJsonTextFromEditor(matchersEditor),
+    settings: getJsonTextFromEditor(settingsEditor),
   };
   const validatedConfig = storage.parse(config);
 
@@ -77,8 +80,15 @@ function validateJson() {
  * @return {Promise<ValidatedConfiguration>}
  */
 async function validateEverything() {
+  let isValid = true;
+  isValid ||= (actionsEditor.validate() == null);
+  isValid ||= (matchersEditor.validate() == null);
+  isValid ||= (settingsEditor.validate() == null);
+
   const validatedConfig = validateJson();
-  if (!validatedConfig.valid) {
+  isValid ||= validatedConfig.valid;
+
+  if (! isValid) {
     return validatedConfig;
   }
 
@@ -272,22 +282,61 @@ function setStatus(text) {
 }
 
 // ######################################################
+// #                 JSON editors                       #
+// ######################################################
+/** @type {JSONEditor} */
+let actionsEditor;
+/** @type {JSONEditor} */
+let matchersEditor;
+/** @type {JSONEditor} */
+let settingsEditor;
+
+// ######################################################
 // #                 Event Handlers                     #
 // ######################################################
 
 /**
- * Restores the preferences from the storage.
- * @return {void}
+ * Loads the config, and sets up editors.
  */
 function onPageLoad() {
-  storage.getRawConfiguration()
-      .then((items) => {
-        getHTMLTextAreaElement('actionsInput').value = items.actions;
-        getHTMLTextAreaElement('matchersInput').value = items.matchers;
-        getHTMLTextAreaElement('settingsInput').value = items.settings;
-      },
-      ).then(() => validateEverything())
-  ;
+  actionsEditor = new JSONEditor({
+    target: checkNonUndefined(document.getElementById('actionsInput')),
+    props: {
+      content: {text: '[]'},
+      mode: Mode.text,
+      navigationBar: false,
+      onChange: onEditorChanged,
+    },
+  });
+
+  matchersEditor = new JSONEditor({
+    target: checkNonUndefined(document.getElementById('matchersInput')),
+    props: {
+      content: {text: '[]'},
+      mode: Mode.text,
+      navigationBar: false,
+      onChange: onEditorChanged,
+    },
+  });
+
+  settingsEditor = new JSONEditor({
+    target: checkNonUndefined(document.getElementById('settingsInput')),
+    props: {
+      content: {text: '{}'},
+      mode: Mode.text,
+      navigationBar: false,
+      onChange: onEditorChanged,
+    },
+  });
+
+  new Storage().getRawConfiguration().then((config) => {
+    actionsEditor.set({text: config.actions});
+    matchersEditor.set({text: config.matchers});
+    settingsEditor.set({text: config.settings});
+    // Remove Loading markers.
+    [...document.getElementsByClassName('loading')].forEach((e) => e.remove());
+    validateEverything();
+  });
 }
 
 
@@ -312,23 +361,11 @@ async function onValidateClick() {
   await validateEverything();
 }
 
-/** @return {Promise<void>} */
-async function onFormatClick() {
-  const validatedConfig = await validateJson();
-
-  if (validatedConfig.valid) {
-    getHTMLTextAreaElement('actionsInput').value = StorageToJson.actions(validatedConfig.actions);
-    getHTMLTextAreaElement('matchersInput').value = StorageToJson.matchers(validatedConfig.matchers);
-    getHTMLTextAreaElement('settingsInput').value = StorageToJson.settings(validatedConfig.settings);
-  }
-}
-
 let textAreaValidationTimer = undefined;
 /**
- * @param {KeyboardEvent} event
- * @return {void}
+ * Executed when editor contents are changed.
  */
-function onTextAreaKeyUp(event) {
+function onEditorChanged() {
   if (textAreaValidationTimer) {
     clearTimeout(textAreaValidationTimer);
   }
@@ -355,10 +392,5 @@ document.addEventListener('DOMContentLoaded', onDisplayChanged);
 document.addEventListener('keydown', onKeyDown);
 checkNonUndefined(document.getElementById('save')).addEventListener('click', onSaveClick);
 checkNonUndefined(document.getElementById('validate')).addEventListener('click', onValidateClick);
-checkNonUndefined(document.getElementById('format')).addEventListener('click', onFormatClick);
-
-checkNonUndefined(document.getElementById('actionsInput')).addEventListener('keyup', onTextAreaKeyUp);
-checkNonUndefined(document.getElementById('matchersInput')).addEventListener('keyup', onTextAreaKeyUp);
-checkNonUndefined(document.getElementById('settingsInput')).addEventListener('keyup', onTextAreaKeyUp);
 
 chrome.system.display.onDisplayChanged.addListener(onDisplayChanged);

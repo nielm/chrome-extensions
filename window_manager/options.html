@@ -20,8 +20,13 @@
         font-size: 9pt;
       }
 
-      textarea {
+      .jsonEditor {
         width: 100%;
+        height: 400px;
+      }
+
+      #settingsInput {
+        height: 180px;
       }
 
       table, th, td {
@@ -134,20 +139,28 @@
       <a href='https://github.com/birnenlabs/chrome-extensions/blob/main/window_manager/README.md' target="_blank">documentation on github</a>.
 
       <h2>Actions</h2>
-      <textarea id="actionsInput" rows="25" cols="50"></textarea>
-      <div id="actionsInputStatus">OK</div>
+      <div id="actionsInput"
+           class="jsonEditor">
+          <h3 class="loading">Loading JSON editor...</h3>
+      </div>
+      <div id="actionsInputStatus"></div>
 
       <h2>Matchers</h2>
-      <textarea id="matchersInput" rows="25" cols="50"></textarea>
-      <div id="matchersInputStatus">OK</div>
+      <div id="matchersInput"
+           class="jsonEditor">
+          <h3 class="loading">Loading JSON editor...</h3>
+      </div>
+      <div id="matchersInputStatus"></div>
 
       <h2>Settings</h2>
-      <textarea id="settingsInput" rows="10" cols="50"></textarea>
-      <div id="settingsInputStatus">OK</div>
+      <div id="settingsInput"
+           class="jsonEditor">
+          <h3 class="loading">Loading JSON editor...</h3>
+      </div>
+      <div id="settingsInputStatus"></div>
 
       <div id="buttons">
         <button id="validate">Validate</button>
-        <button id="format">Format</button>
         <button id="save">Save</button>
       </div>
       <div class="warning" id="status"></div>

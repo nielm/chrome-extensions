@@ -7,11 +7,12 @@
     "eslint": "^8.56.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-jsdoc": "^48.0.6",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vanilla-jsoneditor": "^0.21.5"
   },
   "scripts": {
-    "eslint": "npx eslint '**/*.js'",
-    "eslint-fix": "npx eslint --fix '**/*.js'",
+    "eslint": "npx eslint '**/*.js' --ignore-pattern '**/jsoneditor/*'",
+    "eslint-fix": "npx eslint --fix '**/*.js'  --ignore-pattern '**/jsoneditor/*'",
     "typecheck": "tsc --project jsconfig.json --maxNodeModuleJsDepth 0 --noEmit"
   }
 }

@@ -7,5 +7,6 @@
     "noEmit": true,
     "strictNullChecks": true,
   },
-  "include": ["**/*"]
+  "include": ["**/*.js"],
+  "exclude": ["**/jsoneditor/**/*.js"]
 }
