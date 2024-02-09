@@ -1,8 +1,6 @@
-To update the standalone-jsoneditor.* files:
+To build the required files in this directory:
 
-cd ..
+In the top level chrome-extensions directory, run:
+
 npm install
-cd window_manager
-echo "// @ts-nocheck" > jsoneditor/standalone.js
-cat ../node_modules/vanilla-jsoneditor/standalone.js >> jsoneditor/standalone.js
-cp ../node_modules/vanilla-jsoneditor/standalone.d.ts jsoneditor/
+  npm run build-wm-files

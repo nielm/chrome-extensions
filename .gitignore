@@ -4,7 +4,10 @@ logs
 *.log
 npm-debug.log*
 .eslintcache
-
+package-lock.json
+window_manager/jsoneditor/*.js
+window_manager/jsoneditor/*.js.map
+window_manager/jsoneditor/*.ts
 .vscode/*
 .history/
 
