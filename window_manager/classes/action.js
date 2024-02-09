@@ -1,6 +1,5 @@
 import {Display} from './displays.js';
 import {Position} from './position.js';
-import {Settings} from './settings.js';
 import {validateClass} from '../utils/validation.js';
 
 
@@ -55,17 +54,6 @@ export class Action {
   }
 
   /**
-   * @return {Promise<Action[]>}
-   */
-  static loadAll() {
-    return chrome.storage.sync.get({actions: '[]'})
-        .then((items) => items.actions)
-        .then((actions) => (actions ?
-                        JSON.parse(actions).map((a) => Action.from(a)) :
-                        []));
-  }
-
-  /**
    * Creates object from json string without validation.
    *
    * @param {*} json
@@ -79,20 +67,6 @@ export class Action {
       json.row = Object.assign(new Position(), json.row);
     }
     return Object.assign(new Action(), json);
-  }
-
-  /**
-   * @param {*} json
-   * @return {void}
-   */
-  static validate(json) {
-    try {
-      Settings.validateClass(new Action(), json, ['menuName', 'shortcutId', 'comment']);
-      Position.validate(json.column);
-      Position.validate(json.row);
-    } catch (e) {
-      throw new Error(`Invalid action with id=${json.id}: ${e.message}`);
-    }
   }
 
   /**

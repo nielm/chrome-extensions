@@ -1,6 +1,5 @@
-import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
-import {Settings} from './classes/settings.js';
+import {Storage} from './classes/storage.js';
 import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
 
 const ACTION_START_TIMEOUT_MS = 200;
@@ -11,6 +10,8 @@ let displayChangedTimeoutId = null;
 (async () => {
   await Displays.init();
 })();
+
+const storage = new Storage();
 
 chrome.commands.onCommand.addListener(async (command, tab) => {
   const commandIdPrefix = 'zzz-shortcut-';
@@ -28,7 +29,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     if (isNaN(shortcutId)) {
       throw new Error(`Invalid command: ${command} - expected ${commandIdPrefix}##`);
     }
-    const actionsPromise = (await Action.loadAll()).filter((action) => action.shortcutId == shortcutId);
+    const actionsPromise = (await storage.getActions()).filter((action) => action.shortcutId == shortcutId);
     updateWindowWithActions(await actionsPromise);
   } else {
     console.log(`Invalid command: ${command}`);
@@ -36,7 +37,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 });
 
 chrome.system.display.onDisplayChanged.addListener(async () => {
-  const settings = await Settings.load();
+  const settings = await storage.getSettings();
   if (settings.triggerOnMonitorChange) {
     if (displayChangedTimeoutId) {
       clearTimeout(displayChangedTimeoutId);
@@ -61,7 +62,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
 });
 
 chrome.windows.onCreated.addListener(async (window) => {
-  const settings = await Settings.load();
+  const settings = await storage.getSettings();
   if (settings.triggerOnWindowCreated) {
     setTimeout(updateWindowWithMatchedActions, ACTION_START_TIMEOUT_MS, window.id);
   }
@@ -73,7 +74,7 @@ chrome.runtime.onMessage.addListener(
       if (request.command === 'updateWindows') {
         if (request.actionId) {
         // If request contains actionId it is applied to the current window only
-          const actionsPromise = (await Action.loadAll()).filter((action) => action.id == request.actionId);
+          const actionsPromise = (await storage.getActions()).filter((action) => action.id == request.actionId);
           updateWindowWithActions(await actionsPromise);
         } else {
           updateWindows();

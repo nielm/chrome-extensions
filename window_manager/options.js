@@ -271,7 +271,7 @@ function setStatus(text) {
 // ######################################################
 
 /**
- * Restores the preferences from chrome.storage.
+ * Restores the preferences from the storage.
  * @return {void}
  */
 function onPageLoad() {
@@ -280,9 +280,9 @@ function onPageLoad() {
         getHTMLTextAreaElement('actionsInput').value = items.actions;
         getHTMLTextAreaElement('matchersInput').value = items.matchers;
         getHTMLTextAreaElement('settingsInput').value = items.settings;
-        validateEverything();
       },
-      );
+      ).then(() => validateEverything())
+  ;
 }
 
 

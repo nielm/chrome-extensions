@@ -1,4 +1,3 @@
-import {Settings} from './settings.js';
 import {validateClass} from '../utils/validation.js';
 
 /**
@@ -29,16 +28,6 @@ export class Matcher {
     validateClass(new Matcher(), this, ['windowTypes', 'anyTabUrl', 'minTabsNum', 'maxTabsNum', 'comment']);
   }
 
-  /**
-   * @return {Promise<Matcher[]>}
-   */
-  static loadAll() {
-    return chrome.storage.sync.get({matchers: '[]'})
-        .then((items) => items.matchers)
-        .then((matchers) => (matchers ?
-                        JSON.parse(matchers).map((a) => Matcher.from(a)) :
-                        []));
-  }
 
   /**
    * Creates object from json string without validation.
@@ -48,18 +37,6 @@ export class Matcher {
    */
   static from(json) {
     return Object.assign(new Matcher(), json);
-  }
-
-  /**
-  * @param {*} json
-  * @return {void}
-  */
-  static validate(json) {
-    try {
-      Settings.validateClass(new Matcher(), json, ['windowTypes', 'anyTabUrl', 'minTabsNum', 'maxTabsNum', 'comment']);
-    } catch (e) {
-      throw new Error(`Invalid matcher with actions=[${json.actions}]: ${e.message}`);
-    }
   }
 
   /**

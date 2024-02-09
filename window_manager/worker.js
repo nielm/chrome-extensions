@@ -1,8 +1,10 @@
 import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
-import {Matcher} from './classes/matcher.js';
+import {Storage} from './classes/storage.js';
 
 const UPDATE_TIMEOUT_MS = 5;
+
+const storage = new Storage();
 
 /**
  * Applies specified actions to the focused window
@@ -52,8 +54,8 @@ export async function updateWindows() {
  */
 async function updateWindowsFromArray(windows) {
   const displaysPromise = Displays.getDisplays();
-  const actionsPromise = Action.loadAll();
-  const matchersPromise = Matcher.loadAll();
+  const actionsPromise = storage.getActions();
+  const matchersPromise = storage.getMatchers();
 
   const displays = await displaysPromise;
 

@@ -1,4 +1,3 @@
-import {Action} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 import {Storage} from './classes/storage.js';
@@ -11,10 +10,10 @@ function organiseClick() {
 
 /** @return {Promise<void>} */
 async function createActionsMenu() {
-  new Storage();
+  const storage = new Storage();
   // Only create buttons for actions which have valid displays.
-  const settingsPromise = Settings.load();
-  const actionsPromise = Action.loadAll();
+  const settingsPromise = storage.getSettings();
+  const actionsPromise = storage.getActions();
   const displays = await Displays.getDisplays();
 
   const actions = (await actionsPromise)

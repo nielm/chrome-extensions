@@ -1,4 +1,3 @@
-import {Settings} from './settings.js';
 import {validateClass} from '../utils/validation.js';
 
 
@@ -40,13 +39,6 @@ export class Position {
     return Object.assign(new Position(), json);
   }
 
-  /**
-   * @param {*} json
-   * @return {void}
-   */
-  static validate(json) {
-    Settings.validateClass(new Position(), json, ['comment']);
-  }
 
   /**
    * size: amount of pixels that can be used:
