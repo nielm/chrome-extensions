@@ -41,18 +41,25 @@ export class Storage {
   }
 
   /**
+   * Returns configuration as it was stored in the chrome.storage. It will try
+   * to format it but it wont fail if the configuration is invalid.
+   *
    * @return {Promise<RawConfiguration>}
    */
   async getRawConfiguration() {
     return chrome.storage.sync.get({actions: '[]', matchers: '[]', settings: '{}'})
         .then((item) => ({
-          actions: maybeFormat(item.actions),
-          matchers: maybeFormat(item.matchers),
-          settings: maybeFormat(item.settings),
+          actions: Storage.#maybeFormat(item.actions),
+          matchers: Storage.#maybeFormat(item.matchers),
+          settings: Storage.#maybeFormat(item.settings),
         }));
   }
 
   /**
+   * Returns actions from the storage.
+   * Note: this method is not performing any validation as the data in the storage
+   *       should be valid.
+   *
    * @return {Promise<Action[]>}
    */
   async getActions() {
@@ -60,6 +67,10 @@ export class Storage {
   }
 
   /**
+   * Returns matchers from the storage.
+   * Note: this method is not performing any validation as the data in the storage
+   *       should be valid.
+   *
    * @return {Promise<Matcher[]>}
    */
   async getMatchers() {
@@ -67,6 +78,10 @@ export class Storage {
   }
 
   /**
+   * Returns settings from the storage.
+   * Note: this method is not performing any validation as the data in the storage
+   *       should be valid.
+   *
    * @return {Promise<Settings>}
    */
   async getSettings() {
@@ -74,6 +89,8 @@ export class Storage {
   }
 
   /**
+   * Converts raw configuration into validated configuration that can be used to save the data.
+   *
    * @param {RawConfiguration} configuration
    * @return {ValidatedConfiguration}
    */
@@ -139,6 +156,8 @@ export class Storage {
   }
 
   /**
+   * Saves validated configuration to the storage.
+   *
    * @param {ValidatedConfiguration} configuration
    * @return {Promise<void>}
    */
@@ -153,21 +172,24 @@ export class Storage {
           settings: StorageToJson.settings(configuration.settings, 0),
         });
   }
-}
 
-
-/**
+  
+  /**
+   * It will try to format the string data but won't fail in case of problems.
+   *
    * @param {string} value
    * @return {string}
    */
-function maybeFormat(value) {
-  try {
-    return JSON.stringify(JSON.parse(value), undefined, 2);
-  } catch (e) {
-    console.warn(`Could not format JSON: ${e.message}`);
-    return value;
+  static #maybeFormat(value) {
+    try {
+      return JSON.stringify(JSON.parse(value), undefined, 2);
+    } catch (e) {
+      console.warn(`Could not format JSON: ${e.message}`);
+      return value;
+    }
   }
 }
+
 
 /** StorageToJson class */
 export class StorageToJson {

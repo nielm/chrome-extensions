@@ -59,6 +59,9 @@ export class Displays {
 
   /**
    * Returns true if the displays were changed since the last check.
+   * 
+   * Note: this method should be called in a single onDisplayChanged handler as it updates data
+   *       in the chrome session storage.
    *
    * @return {Promise<boolean>}
    */
