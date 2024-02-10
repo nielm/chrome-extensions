@@ -17,12 +17,12 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
   const commandIdPrefix = 'zzz-shortcut-';
 
   if (command === 'all-windows-shortcut') {
-    updateAllWindowsWithAllActions();
+    await updateAllWindowsWithAllActions();
   } else if (command === 'focused-window-shortcut') {
-    updateWindowWithAllActions(tab?.windowId);
+    await updateWindowWithAllActions(tab?.windowId);
   } else if (command.startsWith(commandIdPrefix)) {
     const shortcutId = parseInt(command.slice(commandIdPrefix.length), 10);
-    updateWindowWithSpecifiedAction(tab?.windowId, ((a) => a.shortcutId === shortcutId));
+    await updateWindowWithSpecifiedAction(tab?.windowId, ((a) => a.shortcutId === shortcutId));
   } else {
     console.log(`Invalid command: ${command}`);
   }
@@ -43,7 +43,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           displayChangedTimeoutId = null;
           if (await Displays.displaysChanged()) {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: display change detected, updating`);
-            updateAllWindowsWithAllActions();
+            await updateAllWindowsWithAllActions();
           } else {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: displays change not detected`);
           }
@@ -64,11 +64,11 @@ chrome.windows.onCreated.addListener(async (window) => {
 chrome.runtime.onMessage.addListener(
     async function(request, sender, sendResponse) {
       if (request.command === 'updateAllWindowsWithAllActions') {
-        updateAllWindowsWithAllActions();
+        await updateAllWindowsWithAllActions();
         return true;
       } else if (request.command === 'updateWindowWithSpecifiedAction') {
         if (request.actionId && request.windowId) {
-          updateWindowWithSpecifiedAction(request.windowId, ((a) => a.id === request.actionId));
+          await updateWindowWithSpecifiedAction(request.windowId, ((a) => a.id === request.actionId));
           return true;
         }
         console.warn(`Invalid updateWindowWithSpecifiedAction: ${request}`);

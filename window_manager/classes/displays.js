@@ -152,7 +152,7 @@ export class Displays {
    * @param {string} displayName
    * @return {Display|undefined}
    */
-  static #matchDisplay(displays, displayName) {
+  static #findDisplay(displays, displayName) {
     let prefixDisplayName=displayName;
     let displayIndex = 0;
     // look for a [N] suffix, and split display name into prefix and suffix
@@ -184,7 +184,7 @@ export class Displays {
    */
   static mapDisplays(displays, referencedDisplayIds) {
     return new Map([...referencedDisplayIds].map(
-        (referencedDisplayId) => [referencedDisplayId, Displays.#matchDisplay(displays, referencedDisplayId)]));
+        (referencedDisplayId) => [referencedDisplayId, Displays.#findDisplay(displays, referencedDisplayId)]));
   }
 
   /**

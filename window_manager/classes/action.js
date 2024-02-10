@@ -1,5 +1,6 @@
-import {Display} from './displays.js';
+import {Display, Displays} from './displays.js';
 import {Position} from './position.js';
+import {checkNonEmpty} from '../utils/preconditions.js';
 import {validateClass} from '../utils/validation.js';
 
 
@@ -15,6 +16,33 @@ import {validateClass} from '../utils/validation.js';
  * @property {chrome.windows.windowStateEnum} state
  * @property {boolean} focused
  */
+
+/**
+ * Will convert Action to ActionWithDisplay based on the displays list.
+ * The output list will have the same size as an input list, if the display
+ * is not found the same Action will be returned.
+ *
+ * @param {Action[]} actions
+ * @param {Display[]} displays
+ * @return {(ActionWithDisplay | Action)[]}
+ */
+export function matchActionsToDisplay(actions, displays) {
+  const referencedDisplayIds = new Set(actions.map((a) => a.display));
+  const displaysMap = Displays.mapDisplays(displays, referencedDisplayIds);
+
+  return actions.map((a) => (displaysMap.get(a.display) ? new ActionWithDisplay(checkNonEmpty(displaysMap.get(a.display), 'This is bug in the action.js code'), a) : a));
+}
+
+/**
+ * @param {(ActionWithDisplay | Action)[]} actions
+ * @return {ActionWithDisplay[]}
+ */
+export function filterWithDisplay(actions) {
+  return actions
+      .map((a) => (a instanceof ActionWithDisplay ? a : undefined))
+      .filter((a) => a)
+      .map((a) => checkNonEmpty(a, 'This is bug in the action.js code: filter.'));
+}
 
 /** Action class */
 export class Action {
@@ -206,6 +234,7 @@ export class ActionWithDisplay extends Action {
    */
   prepareUpdate() {
     const display = this.matchedDisplay;
+
     /** @type {WindowsUpdate} */
     const windowsUpdate = {
       state: 'normal',
