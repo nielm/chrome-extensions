@@ -1,36 +1,45 @@
-import {Action} from './classes/action.js';
-import {Displays} from './classes/displays.js';
+import {Action, ActionWithDisplay} from './classes/action.js';
+import {Display, Displays} from './classes/displays.js';
 import {Storage} from './classes/storage.js';
+import {checkNonEmpty} from './utils/preconditions.js';
+import {combine2} from './utils/promise.js';
 
 const UPDATE_TIMEOUT_MS = 5;
 
 const storage = new Storage();
 
 /**
- * Applies specified actions to the focused window
+ * Returns list of actions that are valid for current display.
  *
- * @param {Action[]} actions
+ * @param {Promise<Display[]>} displaysPromise
+ * @return {Promise<ActionWithDisplay[]>}
+ */
+function getValidActions(displaysPromise) {
+  const actionsPromise = storage.getActions();
+  const referencedDisplayIdsPromise = actionsPromise.then((actions) => new Set(actions.map((a) => a.display)));
+  const displaysMapPromise = combine2(displaysPromise, referencedDisplayIdsPromise, Displays.mapDisplays);
+
+  return combine2(actionsPromise, displaysMapPromise, (actions, displaysMap) =>
+    actions.filter((a) => displaysMap.get(a.display)).map((a) => new ActionWithDisplay(checkNonEmpty(displaysMap.get(a.display), 'This is a bug in the code - empty entries should be filtered.'), a)));
+}
+
+/**
+ * Applies actions that matches predicate to the specified windowId.
+ *
+ * @param {number} windowId
+ * @param {function(Action): boolean} actionPredicateFn
  * @return {Promise<void>}
  */
-export async function updateWindowWithActions(actions) {
-  const windowPromise = chrome.windows.getLastFocused();
-  const displayPromise = Displays.getDisplays();
-
-  const window = await windowPromise;
-  if (window.id === undefined) {
-    console.error('Last focused window doesn`t have valid id. Cannot apply actions.');
-    return;
-  }
-
-  const windowUpdate = {};
-  // merge actions - createUpdate only returns values for actions with valid displays.
-  for (const action of actions) {
-    Object.assign(windowUpdate, action.createUpdate(await displayPromise));
-  }
-
-  if (Object.keys(windowUpdate).length > 0 ) {
-    chrome.windows.update(window.id, windowUpdate);
-  }
+export function updateWindowWithSpecifiedAction(windowId, actionPredicateFn) {
+  return getValidActions(Displays.getDisplays())
+  // Get all actions that are matching the predicate and select the last one.
+      .then(
+          (actions) =>
+            actions.filter(actionPredicateFn).findLast(() => true))
+      .then((action) => checkNonEmpty(action, `Could not find action for window: ${windowId}`))
+      .then((action) => action.prepareUpdate())
+      .then((actionUpdate) => chrome.windows.update(windowId, actionUpdate))
+      .then(() => undefined);
 }
 
 /**
@@ -39,27 +48,32 @@ export async function updateWindowWithActions(actions) {
  * @param {number} windowId
  * @return {Promise<void>}
  */
-export async function updateWindowWithMatchedActions(windowId) {
-  updateWindowsFromArray((await chrome.windows.getAll({populate: true})).filter((window) => window.id === windowId));
+export function updateWindowWithAllActions(windowId) {
+  return chrome.windows.get(windowId, {populate: true})
+      .then((window) => checkNonEmpty(window, `Could not find window of id: ${windowId}`))
+      .then((window) => updateWindowsWithMatchedActions([window]));
 }
 
 /** @return {Promise<void>} */
-export async function updateWindows() {
-  updateWindowsFromArray(await chrome.windows.getAll({populate: true}));
+export function updateAllWindowsWithAllActions() {
+  return chrome.windows.getAll({populate: true})
+      .then((windows) => updateWindowsWithMatchedActions(windows));
 }
 
 /**
+ * Updates all windows specified in the parameter according to the matching saved actions.
+ *
  * @param {chrome.windows.Window[]} windows
  * @return {Promise<void>}
  */
-async function updateWindowsFromArray(windows) {
+async function updateWindowsWithMatchedActions(windows) {
   const displaysPromise = Displays.getDisplays();
   const actionsPromise = storage.getActions();
   const matchersPromise = storage.getMatchers();
 
   const displays = await displaysPromise;
 
-  console.groupCollapsed(`${new Date().toLocaleTimeString()} updateWindowsFromArray`);
+  console.groupCollapsed(`${new Date().toLocaleTimeString()} updateWindowsWithMatchedActions`);
 
   const actions = new Map(
       (await actionsPromise)
@@ -138,5 +152,4 @@ async function updateWindowsFromArray(windows) {
   // Finalize logging after all windows are updated.
   setTimeout(console.groupEnd, timeout * UPDATE_TIMEOUT_MS);
 }
-
 

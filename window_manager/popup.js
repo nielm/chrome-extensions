@@ -5,7 +5,7 @@ import {checkNonUndefined} from './utils/preconditions.js';
 
 /** @return {void} */
 function organiseClick() {
-  chrome.runtime.sendMessage({command: 'updateWindows', actionId: null});
+  chrome.runtime.sendMessage({command: 'updateAllWindowsWithAllActions'});
 }
 
 /** @return {Promise<void>} */
@@ -20,11 +20,14 @@ async function createActionsMenu() {
       .filter((action) => action.menuName)
       .filter((action) => action.findDisplay(displays)!=null);
 
+  const currentWindowId = (await chrome.windows.getCurrent()).id;
+
   const actionsEl = checkNonUndefined(document.getElementById('actions'));
   for (const action of actions) {
     const actionEl = document.createElement('button');
     actionEl.textContent = action.menuName;
-    actionEl.addEventListener('click', () => chrome.runtime.sendMessage({command: 'updateWindows', actionId: action.id}));
+    actionEl.addEventListener('click', () => chrome.runtime.sendMessage(
+        {command: 'updateWindowWithSpecifiedAction', actionId: action.id, windowId: currentWindowId}));
     actionsEl.appendChild(actionEl);
   }
 

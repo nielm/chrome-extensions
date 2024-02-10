@@ -12,7 +12,7 @@ import {validateClass} from '../utils/validation.js';
  * @property {number=} top
  * @property {number=} width
  * @property {number=} height
- * @property {string} state
+ * @property {chrome.windows.windowStateEnum} state
  * @property {boolean} focused
  */
 
@@ -154,6 +154,59 @@ export class Action {
       return null;
     }
 
+    /** @type {WindowsUpdate} */
+    const windowsUpdate = {
+      state: 'normal',
+      focused: true,
+    };
+    if (this.column) {
+      const column = this.column.calculate(display.workArea.width);
+      if (column.start != undefined) {
+        windowsUpdate.left = display.workArea.left + column.start;
+        if (column.end != undefined) {
+          windowsUpdate.width = column.end - column.start;
+        }
+      }
+    } else {
+      console.debug(`action.id=${this.id} column not defined`);
+    }
+    if (this.row) {
+      const row = this.row.calculate(display.workArea.height);
+      if (row.start != undefined) {
+        windowsUpdate.top = display.workArea.top + row.start;
+        if (row.end != undefined) {
+          windowsUpdate.height = row.end - row.start;
+        }
+      }
+    } else {
+      console.debug(`action.id=${this.id} row not defined`);
+    }
+
+    return windowsUpdate;
+  }
+}
+
+/** ActionWithDisplay class */
+export class ActionWithDisplay extends Action {
+  /** @type {Display} */
+  matchedDisplay;
+
+  /**
+   * @param {Display} matchedDisplay
+   * @param {Action} action
+   */
+  constructor(matchedDisplay, action) {
+    super();
+    Object.assign(this, action);
+    this.matchedDisplay = matchedDisplay;
+  }
+
+  /**
+   * @return {WindowsUpdate}
+   */
+  prepareUpdate() {
+    const display = this.matchedDisplay;
+    /** @type {WindowsUpdate} */
     const windowsUpdate = {
       state: 'normal',
       focused: true,

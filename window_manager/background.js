@@ -1,6 +1,6 @@
 import {Displays} from './classes/displays.js';
 import {Storage} from './classes/storage.js';
-import {updateWindowWithActions, updateWindowWithMatchedActions, updateWindows} from './worker.js';
+import {updateWindowWithAllActions, updateAllWindowsWithAllActions, updateWindowWithSpecifiedAction} from './worker.js';
 
 const ACTION_START_TIMEOUT_MS = 200;
 
@@ -17,20 +17,12 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
   const commandIdPrefix = 'zzz-shortcut-';
 
   if (command === 'all-windows-shortcut') {
-    updateWindows();
+    updateAllWindowsWithAllActions();
   } else if (command === 'focused-window-shortcut') {
-    if (tab) {
-      updateWindowWithMatchedActions(tab.windowId);
-    } else {
-      console.log('focused-window-shortcut triggered but tab is not defined.');
-    }
+    updateWindowWithAllActions(tab?.windowId);
   } else if (command.startsWith(commandIdPrefix)) {
     const shortcutId = parseInt(command.slice(commandIdPrefix.length), 10);
-    if (isNaN(shortcutId)) {
-      throw new Error(`Invalid command: ${command} - expected ${commandIdPrefix}##`);
-    }
-    const actionsPromise = (await storage.getActions()).filter((action) => action.shortcutId == shortcutId);
-    updateWindowWithActions(await actionsPromise);
+    updateWindowWithSpecifiedAction(tab?.windowId, ((a) => a.shortcutId === shortcutId));
   } else {
     console.log(`Invalid command: ${command}`);
   }
@@ -51,7 +43,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           displayChangedTimeoutId = null;
           if (await Displays.displaysChanged()) {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: display change detected, updating`);
-            updateWindows();
+            updateAllWindowsWithAllActions();
           } else {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: displays change not detected`);
           }
@@ -64,23 +56,24 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
 chrome.windows.onCreated.addListener(async (window) => {
   const settings = await storage.getSettings();
   if (settings.triggerOnWindowCreated) {
-    setTimeout(updateWindowWithMatchedActions, ACTION_START_TIMEOUT_MS, window.id);
+    setTimeout(updateWindowWithAllActions, ACTION_START_TIMEOUT_MS, window.id);
   }
 });
 
 // This is triggered from the options menu.
 chrome.runtime.onMessage.addListener(
     async function(request, sender, sendResponse) {
-      if (request.command === 'updateWindows') {
-        if (request.actionId) {
-        // If request contains actionId it is applied to the current window only
-          const actionsPromise = (await storage.getActions()).filter((action) => action.id == request.actionId);
-          updateWindowWithActions(await actionsPromise);
-        } else {
-          updateWindows();
-        }
+      if (request.command === 'updateAllWindowsWithAllActions') {
+        updateAllWindowsWithAllActions();
         return true;
+      } else if (request.command === 'updateWindowWithSpecifiedAction') {
+        if (request.actionId && request.windowId) {
+          updateWindowWithSpecifiedAction(request.windowId, ((a) => a.id === request.actionId));
+          return true;
+        }
+        console.warn(`Invalid updateWindowWithSpecifiedAction: ${request}`);
       }
+
       return false;
     },
 );

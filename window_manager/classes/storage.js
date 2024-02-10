@@ -173,7 +173,7 @@ export class Storage {
         });
   }
 
-  
+
   /**
    * It will try to format the string data but won't fail in case of problems.
    *

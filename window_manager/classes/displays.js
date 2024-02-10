@@ -43,6 +43,27 @@ export class Display {
     const nativeMode = display.modes.find((m) => m.isNative);
     this.resolution = `${nativeMode?.width}x${nativeMode?.height}`;
   }
+
+  /**
+   * @param {string} displayName
+   * @return {boolean}
+   */
+  matches(displayName) {
+    switch (displayName) {
+      case 'primary':
+        return !!this.isPrimary;
+      case '-primary':
+        return !this.isPrimary;
+      case 'internal':
+        return !!this.isInternal;
+      case '-internal':
+        return !this.isInternal;
+      default:
+        return this.name === displayName ||
+          this.id == displayName || // note this is a number == string comparison
+          this.resolution === displayName;
+    }
+  }
 }
 
 /** Displays class */
@@ -59,7 +80,7 @@ export class Displays {
 
   /**
    * Returns true if the displays were changed since the last check.
-   * 
+   *
    * Note: this method should be called in a single onDisplayChanged handler as it updates data
    *       in the chrome session storage.
    *
@@ -112,12 +133,58 @@ export class Displays {
   }
 
   /**
-   * Returns list of attached displays.
+   * Returns list of attached displays sorted from the top left to bottom right.
    *
    * @return {Promise<Display[]>}
    */
-  static async getDisplays() {
-    return chrome.system.display.getInfo({}).then((displays) => (displays.map((d) => new Display(d))));
+  static getDisplays() {
+    return chrome.system.display.getInfo({})
+        .then((displays) => (displays.map((d) => new Display(d))))
+        .then((displays) => displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top).sort((d1, d2) => d1.bounds.left - d2.bounds.left));
+  }
+
+  /**
+   * Will find the display of the given name in a displays array.
+   * It requires the entire displays array as displays might be
+   * referenced with an index.
+   *
+   * @param {Display[]} displays
+   * @param {string} displayName
+   * @return {Display|undefined}
+   */
+  static #matchDisplay(displays, displayName) {
+    let prefixDisplayName=displayName;
+    let displayIndex = 0;
+    // look for a [N] suffix, and split display name into prefix and suffix
+
+    /* regex:
+      ^         start string
+      (.*?)     group $1 - the smallest possible char sequence - the display name
+      \[        literal '['
+      ([0-9]+)  group $2 - sequnce of 1 or more numbers -- the display index
+      \]        literal ']'
+      $         end of string.
+    */
+
+    const matcher = displayName.match(/^(.*?)\[([0-9]+)\]$/);
+    if (matcher) {
+      prefixDisplayName = matcher[1];
+      displayIndex = parseInt(matcher[2]);
+    }
+
+    return displays.filter((d) => d.matches(prefixDisplayName)).at(displayIndex);
+  }
+
+  /**
+   * Will prepare a map of each display id to a matched display.
+   *
+   * @param {Display[]} displays
+   * @param {Set<string>} referencedDisplayIds
+   * @return {Map<string, Display|undefined>}
+   */
+  static mapDisplays(displays, referencedDisplayIds) {
+    return new Map([...referencedDisplayIds].map(
+        (referencedDisplayId) => [referencedDisplayId, Displays.#matchDisplay(displays, referencedDisplayId)]));
   }
 
   /**
