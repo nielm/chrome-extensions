@@ -10,6 +10,9 @@ export class Settings {
   popupBackgroundColor = 'white';
 
   /** @type {boolean} */
+  rememberPositionsSetWithShortcut = true;
+
+  /** @type {boolean} */
   triggerOnMonitorChange = true;
 
   /** @type {boolean} */

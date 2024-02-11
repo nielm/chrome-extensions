@@ -46,7 +46,7 @@ export class Storage {
    *
    * @return {Promise<RawConfiguration>}
    */
-  async getRawConfiguration() {
+  getRawConfiguration() {
     return chrome.storage.sync.get({actions: '[]', matchers: '[]', settings: '{}'})
         .then((item) => ({
           actions: Storage.#maybeFormat(item.actions),
@@ -62,7 +62,7 @@ export class Storage {
    *
    * @return {Promise<Action[]>}
    */
-  async getActions() {
+  getActions() {
     return chrome.storage.sync.get({actions: '[]'}).then((item) => item.actions).then(StorageFromJson.actions);
   }
 
@@ -73,7 +73,7 @@ export class Storage {
    *
    * @return {Promise<Matcher[]>}
    */
-  async getMatchers() {
+  getMatchers() {
     return chrome.storage.sync.get({matchers: '[]'}).then((item) => item.matchers).then(StorageFromJson.matchers);
   }
 
@@ -84,7 +84,7 @@ export class Storage {
    *
    * @return {Promise<Settings>}
    */
-  async getSettings() {
+  getSettings() {
     return chrome.storage.sync.get({settings: '{}'}).then((item) => item.settings).then(StorageFromJson.settings);
   }
 
