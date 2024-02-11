@@ -38,10 +38,8 @@ export function matchMatcherToAction(matchers, actions) {
  * @return {MatcherWithAction[]}
  */
 export function filterWithAction(matchers) {
-  return matchers
-      .map((m) => (m instanceof MatcherWithAction ? m : undefined))
-      .filter((m) => m)
-      .map((m) => checkNonEmpty(m, 'This is bug in the matcher.js code: filter.'));
+  // eslint-disable-next-line valid-jsdoc, jsdoc/no-undefined-types
+  return matchers.filter(/** @return {m is MatcherWithAction} */ (m) => m instanceof MatcherWithAction);
 }
 
 
@@ -106,7 +104,7 @@ export class Matcher {
       // console.log('Not matched: maxTabsNum');
       return false;
     }
-    console.log(`${this.toString()} matched: `, window);
+    console.log(`Matched '${this.toString()}' to: `, window);
     return true;
   }
 

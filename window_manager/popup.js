@@ -1,7 +1,9 @@
+import {filterWithDisplay, matchActionsToDisplay} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {Settings} from './classes/settings.js';
 import {Storage} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
+import {combine2} from './utils/promise.js';
 
 /** @return {void} */
 function organiseClick() {
@@ -11,23 +13,23 @@ function organiseClick() {
 /** @return {Promise<void>} */
 async function createActionsMenu() {
   const storage = new Storage();
-  // Only create buttons for actions which have valid displays.
   const settingsPromise = storage.getSettings();
-  const actionsPromise = storage.getActions();
-  const displays = await Displays.getDisplays();
 
-  const actions = (await actionsPromise)
-      .filter((action) => action.menuName)
-      .filter((action) => action.findDisplay(displays)!=null);
+  // Only create buttons for actions which have valid displays.
+  const actionsWithDisplay = await combine2(storage.getActions(), Displays.getDisplays(), matchActionsToDisplay)
+      .then((actions) => filterWithDisplay(actions));
+
+  // Find all action menu names
+  const actionMenuNames = new Set(actionsWithDisplay.filter((a) => a.menuName).map((a) => a.menuName));
 
   const currentWindowId = (await chrome.windows.getCurrent()).id;
 
   const actionsEl = checkNonUndefined(document.getElementById('actions'));
-  for (const action of actions) {
+  for (const actionMenuName of actionMenuNames) {
     const actionEl = document.createElement('button');
-    actionEl.textContent = action.menuName;
+    actionEl.textContent = actionMenuName;
     actionEl.addEventListener('click', () => chrome.runtime.sendMessage(
-        {command: 'updateWindowWithSpecifiedAction', actionId: action.id, windowId: currentWindowId}));
+        {command: 'updateWindowWithSpecifiedMenuName', menuName: actionMenuName, windowId: currentWindowId}));
     actionsEl.appendChild(actionEl);
   }
 

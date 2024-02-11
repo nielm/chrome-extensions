@@ -1,13 +1,16 @@
-import {Action} from './classes/action.js';
+import {filterWithDisplay, matchActionsToDisplay, Action, ActionWithDisplay} from './classes/action.js';
 import {Displays} from './classes/displays.js';
-import {Matcher} from './classes/matcher.js';
+import {matchMatcherToAction, Matcher, MatcherWithAction} from './classes/matcher.js';
 import {Storage, StorageToJson} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
+import {combine2} from './utils/promise.js';
 
 
 /**
  * @typedef {import('./classes/storage.js').ValidatedConfiguration} ValidatedConfiguration
  */
+
+const storage = new Storage();
 
 /**
  * @param {string} name
@@ -54,7 +57,6 @@ function setWarning(field, message) {
  * @return {ValidatedConfiguration}
  */
 function validateJson() {
-  const storage = new Storage();
   const config = {
     actions: getHTMLTextAreaElement('actionsInput').value,
     matchers: getHTMLTextAreaElement('matchersInput').value,
@@ -125,14 +127,9 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
  */
 async function showDisplays(configuredActions) {
   const displays = await Displays.getDisplays();
-
-  const displayMap = new Map(
-      [...new Set(configuredActions.map((action) => action.display))].map((display) => [display, Action.findDisplayByName(display, displays)]),
-  );
-
-  // Sort displays by position on desktop -> left to right, then top to bottom
-  displays.sort((d1, d2) => d1.bounds.top - d2.bounds.top);
-  displays.sort((d1, d2) => d1.bounds.left - d2.bounds.left);
+  const actions = await combine2(Promise.resolve(configuredActions), Promise.resolve(displays), matchActionsToDisplay);
+  const actionsWithDisplay = filterWithDisplay(actions);
+  const actionsWithoutDisplay = actions.filter((a) => (!(a instanceof ActionWithDisplay)));
 
   const displayTable = checkNonUndefined(document.getElementById('displaysTable'));
   const displayRowTemplate = checkNonUndefined(document.getElementById('displaysTableRow'));
@@ -150,20 +147,22 @@ async function showDisplays(configuredActions) {
     cols[4].replaceChildren(document.createTextNode(display.resolution));
     cols[5].replaceChildren(document.createTextNode(`${display.bounds.width}x${display.bounds.height}`));
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
-    cols[7].replaceChildren(...(configuredActions.filter((action) => displayMap.get(action.display)?.id === display.id).map((action) => createTableChip(action.id))));
+    cols[7].replaceChildren(...actionsWithDisplay.filter((a) => a.matchedDisplay.id === display.id).map((action) => createTableChip(action.id)));
+
     displayTable.appendChild(displayRow);
   }
 
-  const missingDisplays = new Set([...displayMap].filter(([display, matched]) => matched === null).map(([display, matched]) => display));
-  for (const display of missingDisplays) {
+  const missingDisplays = new Set(actionsWithoutDisplay.map((a) => a.display));
+
+  for (const missingDisplay of missingDisplays) {
     const displayRow = cloneNode(displayTableInvalidRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
 
-    cols[0].replaceChildren(document.createTextNode(display));
+    cols[0].replaceChildren(document.createTextNode(missingDisplay));
     cols[1].replaceChildren(document.createTextNode(
-        `Display '${display}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`,
+        `Display '${missingDisplay}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`,
     ));
-    cols[2].replaceChildren(...(configuredActions.filter((action) => action.display === display).map((action) => createTableChip(action.id))));
+    cols[2].replaceChildren(...actionsWithoutDisplay.filter((action) => action.display === missingDisplay).map((action) => createTableChip(action.id)));
     displayTable.appendChild(displayRow);
   }
 }
@@ -185,19 +184,11 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
   const shortcutsMap = new Map(
       (await chrome.commands.getAll())
           .filter((cmd) => cmd.name?.startsWith(commandIdPrefix))
-          .map((cmd) => [parseInt(cmd.name?.slice(commandIdPrefix.length) || '-1', 10), cmd.shortcut || 'undefined']),
+          .map((cmd) => [parseInt(cmd.name?.slice(commandIdPrefix.length) || '-1', 10), cmd.shortcut]),
   );
 
-  // prepare matchers amount map
-  const matchersMap = new Map();
-  for (const matcher of matchersObj) {
-    for (const action of matcher.actions) {
-      matchersMap.set(action, (matchersMap.has(action) ? [...matchersMap.get(action), matcher] : [matcher]));
-    }
-  }
-
-  // prepare displays
-  const displays = await Displays.getDisplays();
+  const actions = await combine2(Promise.resolve(actionsObj), Displays.getDisplays(), matchActionsToDisplay);
+  const matchers = await combine2(Promise.resolve(matchersObj), Promise.resolve(filterWithDisplay(actions)), matchMatcherToAction);
 
   for (const [actionId, matchers] of matchersWithInvalidActionsMap) {
     const displayRow = cloneNode(actionsTableInvalidRow);
@@ -211,25 +202,34 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     actionsTableEl.appendChild(displayRow);
   }
 
-  for (const action of actionsObj) {
+
+  for (const action of actions) {
     const displayRow = cloneNode(actionsTableRowTemplate);
     const cols = [...displayRow.getElementsByTagName('td')];
-    const display = Action.findDisplayByName(action.display, displays);
 
     cols[0].replaceChildren(document.createTextNode(action.id));
     cols[1].replaceChildren(document.createTextNode(action.display));
-    cols[2].replaceChildren(document.createTextNode(display===null ? 'not connected' : display.name));
-    if (display===null) {
-      cols[2].classList.add('warning');
-    } else {
+    cols[2].replaceChildren(document.createTextNode(action instanceof ActionWithDisplay ? action.matchedDisplay.name : 'not connected'));
+    if (action instanceof ActionWithDisplay) {
       cols[2].removeAttribute('class');
+    } else {
+      cols[2].classList.add('warning');
     }
-    cols[3].replaceChildren(...(matchersMap.get(action.id) || []).map((matcher) => createMatcherDiv(matcher)));
+
+    cols[3].replaceChildren(...matchers.filter((m) => m.actions.some((a) => a === action.id))
+        .map((m) => createMatcherDiv(m, m instanceof MatcherWithAction && m.matchedAction.id === action.id)),
+    );
+
     cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
+
+    const mappedShortcut = shortcutsMap.get(action.shortcutId);
     cols[5].replaceChildren(document.createTextNode(
-      action.shortcutId ?
-        `${shortcutsMap.get(action.shortcutId) || 'invalid id'} [${action.shortcutId}]` :
-        ''));
+      action.shortcutId ? `${mappedShortcut || 'not set'} [${action.shortcutId}]` : ''));
+    if (action.shortcutId && !mappedShortcut) {
+      cols[5].classList.add('warning');
+    } else {
+      cols[5].removeAttribute('class');
+    }
 
     actionsTableEl.appendChild(displayRow);
   }
@@ -237,10 +237,15 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
 
 /**
  * @param {Matcher} matcher
+ * @param {boolean=} matched
  * @return {HTMLElement}
  */
-function createMatcherDiv(matcher) {
-  return createTableChip(matcher.toString());
+function createMatcherDiv(matcher, matched = false) {
+  const result = createTableChip(matcher.toString());
+  if (matched) {
+    result.classList.add('matchedMatcherChip');
+  }
+  return result;
 }
 
 /**
@@ -275,7 +280,7 @@ function setStatus(text) {
  * @return {void}
  */
 function onPageLoad() {
-  new Storage().getRawConfiguration()
+  storage.getRawConfiguration()
       .then((items) => {
         getHTMLTextAreaElement('actionsInput').value = items.actions;
         getHTMLTextAreaElement('matchersInput').value = items.matchers;
@@ -296,7 +301,6 @@ async function onDisplayChanged() {
 /** @return {Promise<void>} */
 async function onSaveClick() {
   const validatedConfig = await validateEverything();
-  const storage = new Storage();
 
   return storage.save(validatedConfig)
       .then(() => setStatus('Options saved'))

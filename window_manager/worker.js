@@ -3,7 +3,7 @@ import {Display, Displays} from './classes/displays.js';
 import {filterWithAction, matchMatcherToAction, MatcherWithAction} from './classes/matcher.js';
 import {Storage} from './classes/storage.js';
 import {checkNonEmpty} from './utils/preconditions.js';
-import {combine2} from './utils/promise.js';
+import {combine2, promiseTimeout} from './utils/promise.js';
 
 const UPDATE_TIMEOUT_MS = 5;
 
@@ -14,8 +14,6 @@ const storage = new Storage();
  */
 
 /**
- * Returns list of actions that are valid for the provided displays.
- * The action.matchedDisplay is guaranteed to be set.
  *
  * @param {Promise<Display[]>} displaysPromise
  * @return {Promise<ActionWithDisplay[]>}
@@ -28,7 +26,6 @@ function getValidActions(displaysPromise) {
 
 /**
  * Returns list of matchers that are valid for the provided actions.
- * The matcher.matchedAction is guaranteed to be set.
  *
  * @param {Promise<Action[]>} actionsPromise
  * @return {Promise<MatcherWithAction[]>}
@@ -42,11 +39,15 @@ function getValidMatchers(actionsPromise) {
 /**
  * Applies actions that matches predicate to the specified windowId.
  *
- * @param {number} windowId
+ * @param {number|undefined} windowId
  * @param {function(Action): boolean} actionPredicateFn
  * @return {Promise<void>}
  */
 export function updateWindowWithSpecifiedAction(windowId, actionPredicateFn) {
+  if (windowId === undefined) {
+    return Promise.reject(new Error('WindowId is undefined.'));
+  }
+
   return getValidActions(Displays.getDisplays())
   // Get all actions that are matching the predicate and select the last one.
       .then(
@@ -62,10 +63,14 @@ export function updateWindowWithSpecifiedAction(windowId, actionPredicateFn) {
 /**
  * Applies all matched actions to the specified windowId
  *
- * @param {number} windowId
+ * @param {number|undefined} windowId
  * @return {Promise<void>}
  */
 export function updateWindowWithAllActions(windowId) {
+  if (windowId === undefined) {
+    return Promise.reject(new Error('WindowId is undefined.'));
+  }
+
   return chrome.windows.get(windowId, {populate: true})
       .then((window) => checkNonEmpty(window, `Could not find window of id: ${windowId}`))
       .then((window) => updateWindowsWithMatchedActions([window]));
@@ -120,14 +125,15 @@ function prepareUpdates(matchers, windows) {
 function updateWindowsWithMatchedActions(windows) {
   console.groupCollapsed(`${new Date().toLocaleTimeString()} updateWindowsWithMatchedActions`);
 
-  const displaysPromise = Displays.getDisplays();
-  const actionsPromise = getValidActions(displaysPromise);
+  const actionsPromise = getValidActions(Displays.getDisplays());
 
   let timeout = 0;
   return getValidMatchers(actionsPromise)
       .then((matchers) => prepareUpdates(matchers, windows))
-      .then((updates) => updates.forEach((u) => setTimeout(chrome.windows.update, timeout++ * UPDATE_TIMEOUT_MS, u.windowId, u.update)))
-      .then(() => setTimeout(console.groupEnd, timeout * UPDATE_TIMEOUT_MS))
+      .then((updates) => Promise.all(
+          updates.map((u) =>
+            promiseTimeout(timeout++ * UPDATE_TIMEOUT_MS, u).then((u) => chrome.windows.update(u.windowId, u.update)))))
+      .then(() => console.groupEnd())
       .then(() => undefined);
 }
 

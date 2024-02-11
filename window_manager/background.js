@@ -1,5 +1,6 @@
 import {Displays} from './classes/displays.js';
 import {Storage} from './classes/storage.js';
+import {promiseTimeout} from './utils/promise.js';
 import {updateWindowWithAllActions, updateAllWindowsWithAllActions, updateWindowWithSpecifiedAction} from './worker.js';
 
 const ACTION_START_TIMEOUT_MS = 200;
@@ -13,19 +14,22 @@ let displayChangedTimeoutId = null;
 
 const storage = new Storage();
 
-chrome.commands.onCommand.addListener(async (command, tab) => {
+chrome.commands.onCommand.addListener((command, tab) => {
   const commandIdPrefix = 'zzz-shortcut-';
 
+  let promise;
   if (command === 'all-windows-shortcut') {
-    await updateAllWindowsWithAllActions();
+    promise = updateAllWindowsWithAllActions();
   } else if (command === 'focused-window-shortcut') {
-    await updateWindowWithAllActions(tab?.windowId);
+    promise = updateWindowWithAllActions(tab?.windowId);
   } else if (command.startsWith(commandIdPrefix)) {
     const shortcutId = parseInt(command.slice(commandIdPrefix.length), 10);
-    await updateWindowWithSpecifiedAction(tab?.windowId, ((a) => a.shortcutId === shortcutId));
+    promise = updateWindowWithSpecifiedAction(tab?.windowId, ((a) => a.shortcutId === shortcutId));
   } else {
-    console.log(`Invalid command: ${command}`);
+    promise = Promise.reject(new Error(`Invalid command: ${command}`));
   }
+
+  return promise.catch((e) => console.error(`onCommand failed with error: ${e.message}.`));
 });
 
 chrome.system.display.onDisplayChanged.addListener(async () => {
@@ -43,7 +47,7 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
           displayChangedTimeoutId = null;
           if (await Displays.displaysChanged()) {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: display change detected, updating`);
-            await updateAllWindowsWithAllActions();
+            await updateAllWindowsWithAllActions().catch((e) => console.error(`onDisplayChanged failed with error: ${e.message}.`));
           } else {
             console.log(`${new Date().toLocaleTimeString()} onDisplayChanged: displays change not detected`);
           }
@@ -53,27 +57,31 @@ chrome.system.display.onDisplayChanged.addListener(async () => {
   }
 });
 
-chrome.windows.onCreated.addListener(async (window) => {
-  const settings = await storage.getSettings();
-  if (settings.triggerOnWindowCreated) {
-    setTimeout(updateWindowWithAllActions, ACTION_START_TIMEOUT_MS, window.id);
-  }
+chrome.windows.onCreated.addListener((window) => {
+  return storage.getSettings()
+      .then((settings) => promiseTimeout(ACTION_START_TIMEOUT_MS, settings))
+      .then((settings) =>
+      settings.triggerOnWindowCreated ?
+        updateWindowWithAllActions(window.id) :
+        console.warn('settings.triggerOnWindowCreated is false, not updating window:', window))
+      .catch((e) => console.error(`onCreated failed with error: ${e.message}.`));
 });
 
 // This is triggered from the options menu.
 chrome.runtime.onMessage.addListener(
-    async function(request, sender, sendResponse) {
+    (request, sender, sendResponse) => {
+      let promise;
+
       if (request.command === 'updateAllWindowsWithAllActions') {
-        await updateAllWindowsWithAllActions();
-        return true;
-      } else if (request.command === 'updateWindowWithSpecifiedAction') {
-        if (request.actionId && request.windowId) {
-          await updateWindowWithSpecifiedAction(request.windowId, ((a) => a.id === request.actionId));
-          return true;
-        }
-        console.warn(`Invalid updateWindowWithSpecifiedAction: ${request}`);
+        promise = updateAllWindowsWithAllActions();
+      } else if (request.command === 'updateWindowWithSpecifiedMenuName') {
+        promise = request.menuName ?
+          updateWindowWithSpecifiedAction(request.windowId, ((a) => a.menuName === request.menuName)) :
+          Promise.reject(new Error('updateWindowWithSpecifiedMenuName requires menuName'));
+      } else {
+        promise = Promise.reject(new Error(`invalid command: ${request.command}`));
       }
 
-      return false;
+      return promise.catch((e) => console.error(`onMessage failed with error: ${e.message}.`));
     },
 );

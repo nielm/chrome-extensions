@@ -31,3 +31,14 @@ export function combine2(promise1, promise2, combineFn) {
 export function combine3(promise1, promise2, promise3, combineFn) {
   return Promise.all([promise1, promise2, promise3]).then((values) => combineFn(values[0], values[1], values[2]));
 }
+
+/**
+ * @template R
+ *
+ * @param {number} delay
+ * @param {R} result
+ * @return {Promise<R>}
+ */
+export function promiseTimeout(delay, result) {
+  return new Promise((resolve) => setTimeout(resolve, delay)).then(() => result);
+}
