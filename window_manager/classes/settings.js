@@ -10,10 +10,10 @@ export class Settings {
   popupBackgroundColor = 'white';
 
   /** @type {boolean} */
-  triggerOnMonitorChange = false;
+  triggerOnMonitorChange = true;
 
   /** @type {boolean} */
-  triggerOnWindowCreated = false;
+  triggerOnWindowCreated = true;
 
   /** @return {void} */
   validate() {
