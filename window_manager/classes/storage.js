@@ -11,6 +11,9 @@ import {Settings} from './settings.js';
  * @property {string} actionsValidation
  * @property {string} matchersValidation
  * @property {string} settingsValidation
+ * @property {?number} actionsStoredSize
+ * @property {?number} matchersStoredSize
+ * @property {?number} settingsStoredSize
  */
 
 /**
@@ -47,12 +50,12 @@ export class Storage {
    * @return {Promise<RawConfiguration>}
    */
   async getRawConfiguration() {
-    return chrome.storage.sync.get({actions: '[]', matchers: '[]', settings: '{}'})
-        .then((item) => ({
-          actions: Storage.#maybeFormat(item.actions),
-          matchers: Storage.#maybeFormat(item.matchers),
-          settings: Storage.#maybeFormat(item.settings),
-        }));
+    const item = await chrome.storage.sync.get({actions: '[]', matchers: '[]', settings: '{}'});
+    return {
+      actions: Storage.#maybeFormat(await Storage.tryDecompress(item.actions)),
+      matchers: Storage.#maybeFormat(await Storage.tryDecompress(item.matchers)),
+      settings: Storage.#maybeFormat(item.settings),
+    };
   }
 
   /**
@@ -63,7 +66,8 @@ export class Storage {
    * @return {Promise<Action[]>}
    */
   async getActions() {
-    return chrome.storage.sync.get({actions: '[]'}).then((item) => item.actions).then(StorageFromJson.actions);
+    const item = await chrome.storage.sync.get({actions: '[]'});
+    return StorageFromJson.actions(await Storage.tryDecompress(item.actions));
   }
 
   /**
@@ -74,7 +78,8 @@ export class Storage {
    * @return {Promise<Matcher[]>}
    */
   async getMatchers() {
-    return chrome.storage.sync.get({matchers: '[]'}).then((item) => item.matchers).then(StorageFromJson.matchers);
+    const item = await chrome.storage.sync.get({matchers: '[]'});
+    return StorageFromJson.matchers(await Storage.tryDecompress(item.matchers));
   }
 
   /**
@@ -92,9 +97,9 @@ export class Storage {
    * Converts raw configuration into validated configuration that can be used to save the data.
    *
    * @param {RawConfiguration} configuration
-   * @return {ValidatedConfiguration}
+   * @return {Promise<ValidatedConfiguration>}
    */
-  parse(configuration) {
+  async parse(configuration) {
     /** @type {ValidatedConfiguration} */
     const result = {
       valid: true,
@@ -104,10 +109,16 @@ export class Storage {
       actions: [],
       matchers: [],
       settings: new Settings(),
+      actionsStoredSize: null,
+      matchersStoredSize: null,
+      settingsStoredSize: null,
     };
 
     try {
       result.actions = StorageFromJson.actions(configuration.actions);
+
+      const stored = await Storage.stringToBase64Gzipped(JSON.stringify(result.actions, undefined, 0));
+      result.actionsStoredSize = new TextEncoder().encode(stored).length + 'actions  '.length;
     } catch (e) {
       result.actionsValidation = e.message;
       result.valid = false;
@@ -115,6 +126,8 @@ export class Storage {
 
     try {
       result.matchers = StorageFromJson.matchers(configuration.matchers);
+      const stored = await Storage.stringToBase64Gzipped(JSON.stringify(result.matchers, undefined, 0));
+      result.matchersStoredSize = new TextEncoder().encode(stored).length+ 'matchers  '.length;
     } catch (e) {
       result.matchersValidation = e.message;
       result.valid = false;
@@ -122,6 +135,8 @@ export class Storage {
 
     try {
       result.settings = StorageFromJson.settings(configuration.settings);
+      const stored = JSON.stringify({settings: StorageToJson.settings(result.settings, 0)});
+      result.settingsStoredSize = new TextEncoder().encode(stored).length;
     } catch (e) {
       result.settingsValidation = e.message;
       result.valid = false;
@@ -165,12 +180,15 @@ export class Storage {
     if (configuration.valid !== true) {
       throw new Error('Could not save invalid configuration');
     }
-    return chrome.storage.sync.set(
+    await chrome.storage.sync.set(
         {
-          actions: StorageToJson.actions(configuration.actions, 0),
-          matchers: StorageToJson.matchers(configuration.matchers, 0),
+          actions: await Storage.stringToBase64Gzipped(StorageToJson.actions(configuration.actions, 0)),
+          matchers: await Storage.stringToBase64Gzipped(StorageToJson.matchers(configuration.matchers, 0)),
           settings: StorageToJson.settings(configuration.settings, 0),
         });
+
+    console.log(`Stored actions size: estimated: ${configuration.actionsStoredSize}, actual: ${await chrome.storage.sync.getBytesInUse('actions')}`);
+    console.log(`Stored matcher size: estimated: ${configuration.matchersStoredSize}, actual: ${await chrome.storage.sync.getBytesInUse('matchers')}`);
   }
 
 
@@ -187,6 +205,63 @@ export class Storage {
       console.warn(`Could not format JSON: ${e.message}`);
       return value;
     }
+  }
+
+  /**
+   * Checks if str is a JSON object, if not, try to decompress it.
+   *
+   * @param {String} str
+   * @return {Promise<String>}
+   */
+  static async tryDecompress(str) {
+    // stored data can be a JSON object, in which case it starts with
+    // '{' or '['.
+    // or a base64-encoded, gzipped, compressed JSON object...
+    // as base64 will never contain '[' or '{', we can use that as a check.
+    //
+    str=str.trim(); // just in case...
+    if (str[0] === '{' || str[0] === '[' ) {
+      // assume JSON
+      return str;
+    }
+    try {
+      return await Storage.base64GzippedToString(str);
+    } catch (e) {
+      console.warn('failed to decode base64-gip, assume bad JSON'+e.message);
+      return str;
+    }
+  }
+
+  /**
+   * Function to decode a base64-encoded gzipped string
+   * @param {String} base64String
+   * @return {Promise<String>}
+  */
+  static async base64GzippedToString(base64String) {
+    const u8 = Uint8Array.from(atob(base64String), (c) => c.charCodeAt(0));
+    const cs = new DecompressionStream('gzip');
+    const writer = cs.writable.getWriter();
+    writer.write(u8);
+    writer.close();
+    // Use Response to convert readable stream to arrayBuffer.
+    return new TextDecoder().decode(await new Response(cs.readable).arrayBuffer());
+  }
+
+  /**
+   * Gzips the given string and encodes it as base64
+   *
+   * @param {String} str
+   * @return {Promise<String>}
+   */
+  static async stringToBase64Gzipped(str) {
+    const byteArray = new TextEncoder().encode(str);
+    const cs = new CompressionStream('gzip');
+    const writer = cs.writable.getWriter();
+    writer.write(byteArray);
+    writer.close();
+    // Use Response to convert readable stream to arrayBuffer.
+    const u8 = new Uint8Array(await (new Response(cs.readable).arrayBuffer()));
+    return btoa(String.fromCharCode(...u8));
   }
 }
 

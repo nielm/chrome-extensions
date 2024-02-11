@@ -54,19 +54,22 @@ function setWarning(field, message) {
 /**
  * Performs simple validation of json text.
  *
- * @return {ValidatedConfiguration}
+ * @return {Promise<ValidatedConfiguration>}
  */
-function validateJson() {
+async function validateJson() {
   const config = {
     actions: getHTMLTextAreaElement('actionsInput').value,
     matchers: getHTMLTextAreaElement('matchersInput').value,
     settings: getHTMLTextAreaElement('settingsInput').value,
   };
-  const validatedConfig = storage.parse(config);
+  const validatedConfig = await storage.parse(config);
 
   setWarning('actions', validatedConfig.actionsValidation);
   setWarning('matchers', validatedConfig.matchersValidation);
   setWarning('settings', validatedConfig.settingsValidation);
+
+  checkNonUndefined(document.getElementById('actionsCounter')).textContent = `${validatedConfig.actionsStoredSize==null ? '???' : validatedConfig.actionsStoredSize}/8192`;
+  checkNonUndefined(document.getElementById('matchersCounter')).textContent = `${validatedConfig.matchersStoredSize==null ? '???' : validatedConfig.matchersStoredSize}/8192`;
 
   return validatedConfig;
 }
@@ -77,7 +80,7 @@ function validateJson() {
  * @return {Promise<ValidatedConfiguration>}
  */
 async function validateEverything() {
-  const validatedConfig = validateJson();
+  const validatedConfig = await validateJson();
   if (!validatedConfig.valid) {
     return validatedConfig;
   }
@@ -127,7 +130,7 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
  */
 async function showDisplays(configuredActions) {
   const displays = await Displays.getDisplays();
-  const actions = await combine2(Promise.resolve(configuredActions), Promise.resolve(displays), matchActionsToDisplay);
+  const actions = matchActionsToDisplay(configuredActions, displays);
   const actionsWithDisplay = filterWithDisplay(actions);
   const actionsWithoutDisplay = actions.filter((a) => (!(a instanceof ActionWithDisplay)));
 
@@ -293,7 +296,7 @@ function onPageLoad() {
 
 /** @return {Promise<void>} */
 async function onDisplayChanged() {
-  const validatedConfig = validateJson();
+  const validatedConfig = await validateJson();
   await showDisplays(validatedConfig.actions);
 }
 
