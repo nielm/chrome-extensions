@@ -4,7 +4,7 @@ import {validateClass} from '../utils/validation.js';
 /** Settings class */
 export class Settings {
   /** @type {string} */
-  popupButtonColor = 'f9f9f9';
+  popupButtonColor = '#f9f9f9';
 
   /** @type {string} */
   popupBackgroundColor = 'white';

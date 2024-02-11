@@ -10,41 +10,52 @@ function organiseClick() {
   chrome.runtime.sendMessage({command: 'updateAllWindowsWithAllActions'});
 }
 
-/** @return {Promise<void>} */
-async function createActionsMenu() {
-  const storage = new Storage();
-  const settingsPromise = storage.getSettings();
-
-  // Only create buttons for actions which have valid displays.
-  const actionsWithDisplay = await combine2(storage.getActions(), Displays.getDisplays(), matchActionsToDisplay)
-      .then((actions) => filterWithDisplay(actions));
-
-  // Find all action menu names
-  const actionMenuNames = new Set(actionsWithDisplay.filter((a) => a.menuName).map((a) => a.menuName));
-
-  const currentWindowId = (await chrome.windows.getCurrent()).id;
-
+/**
+ * @param {Set<string>} actionMenuNames
+ * @param {number|undefined} windowId
+ */
+function addActions(actionMenuNames, windowId) {
   const actionsEl = checkNonUndefined(document.getElementById('actions'));
   for (const actionMenuName of actionMenuNames) {
     const actionEl = document.createElement('button');
     actionEl.textContent = actionMenuName;
     actionEl.addEventListener('click', () => chrome.runtime.sendMessage(
-        {command: 'updateWindowWithSpecifiedMenuName', menuName: actionMenuName, windowId: currentWindowId}));
+        {command: 'updateWindowWithSpecifiedMenuName', menuName: actionMenuName, windowId: windowId}));
     actionsEl.appendChild(actionEl);
   }
-
-  setCss(await settingsPromise);
 }
 
 /**
  * @param {Settings} settings
- * @return {Promise<void>}
  */
-async function setCss(settings) {
-  for (const element of document.querySelectorAll('button')) {
-    element.style.backgroundColor = settings.popupButtonColor;
-  }
-  document.body.style.backgroundColor = settings.popupBackgroundColor;
+function setCss(settings) {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    button {
+      background-color: ${settings.popupButtonColor};
+    }
+    body {
+      background-color: ${settings.popupBackgroundColor};
+    }`;
+  document.head.appendChild(style);
+}
+
+/** @return {Promise<void>} */
+function createActionsMenu() {
+  const storage = new Storage();
+  const actionsWithMenuPromise = storage.getActions()
+      .then((actions) => actions.filter((a) => a.menuName));
+
+  // Only create buttons for actions which have valid displays.
+  const actionMenuNamesPromise = combine2(actionsWithMenuPromise, Displays.getDisplays(), matchActionsToDisplay)
+      .then((actions) => filterWithDisplay(actions).map((a) => a.menuName))
+      .then((actions) => new Set(actions));
+
+  /** @type {Promise<void>} */
+  const menuGeneratedPromise = combine2(actionMenuNamesPromise, chrome.windows.getCurrent().then((window) => window.id), addActions);
+  const cssPromise = storage.getSettings().then((s) => setCss(s));
+
+  return combine2(menuGeneratedPromise, cssPromise, () => undefined);
 }
 
 document.addEventListener('DOMContentLoaded', createActionsMenu);
