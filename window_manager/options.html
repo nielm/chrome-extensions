@@ -20,8 +20,13 @@
         font-size: 9pt;
       }
 
-      textarea {
+      .jsonEditor {
         width: 100%;
+        height: 400px;
+      }
+
+      #settingsInput {
+        height: 180px;
       }
 
       table, th, td {
@@ -85,6 +90,36 @@
       .positionsTable > tr > td:first-child {
         text-align: right;
       }
+      .editorRow {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      .editorLeftCol {
+        flex-basis: 500px;
+        flex-grow: 1;
+        min-width: 500px;
+      }
+      .editorRightCol {
+        flex-basis: min-content;
+        flex-grow: 0;
+        padding-left: 10px;
+        min-width: 350px;
+      }
+      .example {
+        background-color: lightgray;
+      }
+
+      /* disable Json Editor's compact and transform modes */
+      button.jse-compact {
+        display: none !important;
+      }
+      button.jse-transform {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
@@ -144,20 +179,83 @@
       <a href='https://github.com/birnenlabs/chrome-extensions/blob/main/window_manager/README.md' target="_blank">documentation on github</a>.
 
       <h2>Actions</h2>
-      <textarea id="actionsInput" rows="25" cols="50"></textarea>
-      <div id="actionsInputStatus">OK</div>
+      <div class="editorRow">
+        <div class="editorLeftCol">
+          <h3 class="loading jsonEditor">Loading JSON editor...</h3>
+          <div id="actionsInput"
+              class="jsonEditor"
+              style="display: none;">
+          </div>
+        </div>
+        <div class="editorRightCol">
+          <p>Example Action:</p>
+          <pre class="example">
+  {
+    "comment": "An example Action definition",
+    "id": "action-id",
+    "display": "display-name",
+    "column": {
+      "start": 0,
+      "end": "100%"
+    },
+    "row": {
+      "start": 0,
+      "end": "100%"
+    },
+    "shortcutId": 0,
+    "menuName": ""
+  }
+          </pre>
+        </div>
+      </div>
+      <div id="actionsCounter"></div>
+      <div id="actionsInputStatus"></div>
 
       <h2>Matchers</h2>
-      <textarea id="matchersInput" rows="25" cols="50"></textarea>
-      <div id="matchersInputStatus">OK</div>
+      <div class="editorRow">
+        <div class="editorLeftCol">
+          <h3 class="loading jsonEditor">Loading JSON editor...</h3>
+          <div id="matchersInput"
+               class="jsonEditor"
+               style="display: none;">
+          </div>
+        </div>
+        <div class="editorRightCol">
+          <p>Example Matcher:</p>
+          <pre class="example">
+  {
+    "comment": "An example Matcher definition",
+    "actions": [
+      "action-id"
+    ],
+    "windowTypes": [
+      "normal"
+    ],
+    "anyTabUrl": "https://example.org/",
+    "minTabsNum": 0,
+    "maxTabsNum": 1000000
+  }
+          </pre>
+        </div>
+      </div>
+      <div id="matchersCounter"></div>
+      <div id="matchersInputStatus"></div>
 
       <h2>Settings</h2>
-      <textarea id="settingsInput" rows="10" cols="50"></textarea>
-      <div id="settingsInputStatus">OK</div>
+      <div class="editorRow">
+        <div class="editorLeftCol">
+          <h3 class="loading jsonEditor">Loading JSON editor...</h3>
+          <div id="settingsInput"
+               class="jsonEditor"
+               style="display: none;">
+          </div>
+          </div>
+          <div class="editorRightCol"></div>
+      </div>
+      <div id="settingsInputStatus"></div>
 
       <div id="buttons">
         <button id="validate">Validate</button>
-        <button id="format">Format</button>
         <button id="save">Save</button>
       </div>
       <div class="warning" id="status"></div>
