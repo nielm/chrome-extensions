@@ -7,27 +7,11 @@ import {combine2} from './utils/promise.js';
 import {JSONEditor, Mode, createAjvValidator} from './jsoneditor/standalone.js';
 import * as schemaValidator from './jsoneditor/schema-validator.js';
 
-// As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
-const QUOTA_BYTES_PER_ITEM = 8192;
-
 /**
  * @typedef {import('./classes/storage.js').ValidatedConfiguration} ValidatedConfiguration
  */
 
 const storage = new Storage();
-
-/**
- * @param {HTMLElement} el
- * @return {HTMLElement}
- */
-function cloneNode(el) {
-  const result = el.cloneNode(true);
-  if (!(result instanceof HTMLElement)) {
-    throw new Error('Cloned element expected to be HTMLElement');
-  }
-  return result;
-}
-
 
 /**
  * @param {string} field
@@ -57,6 +41,11 @@ function validateJson() {
   };
   const validatedConfig = storage.parse(config);
 
+  // Also check editors validation.
+  if (actionsEditor.validate() != null || matchersEditor.validate() != null || settingsEditor.validate() != null) {
+    validatedConfig.valid = false;
+  }
+
   setWarning('actions', validatedConfig.actionsValidation);
   setWarning('matchers', validatedConfig.matchersValidation);
   setWarning('settings', validatedConfig.settingsValidation);
@@ -71,37 +60,11 @@ function validateJson() {
  * @throws {Error} on invalid configuration.
  */
 async function validateEverything() {
-  let isValid = true;
-
-  // Check editors validation state:
-  if (actionsEditor.validate() != null) {
-    setWarning('actions', 'Validation failed');
-    isValid = false;
-  } else {
-    setWarning('actions', '');
-  }
-  if (matchersEditor.validate() != null) {
-    setWarning('matchers', 'Validation failed');
-    isValid = false;
-  } else {
-    setWarning('matchers', '');
-  }
-  if (settingsEditor.validate() != null) {
-    setWarning('settings', 'Validation failed');
-    isValid = false;
-  } else {
-    setWarning('settings', '');
-  }
-
-  if (!isValid) {
-    throw new Error('Invalid configuration');
-  }
-
   // Check JSON validation state:
   const validatedConfig = validateJson();
 
-  if (! validatedConfig.valid) {
-    throw new Error('Invalid configuration');
+  if (!validatedConfig.valid) {
+    return validatedConfig;
   }
 
   const matchersWithInvalidActionsMap = findMatchersWithInvalidActions(validatedConfig.actions, validatedConfig.matchers);
@@ -148,19 +111,19 @@ function findMatchersWithInvalidActions(actionsObj, matchersObj) {
  * @return {Promise<void>}
  */
 async function showDisplays(configuredActions) {
+  const tableRows = [];
+
   const displays = await Displays.getDisplays();
   const actions = await combine2(Promise.resolve(configuredActions), Promise.resolve(displays), matchActionsToDisplay);
   const actionsWithDisplay = filterWithDisplay(actions);
   const actionsWithoutDisplay = actions.filter((a) => (!(a instanceof ActionWithDisplay)));
 
-  const displayTable = checkNonUndefined(document.getElementById('displaysTable'));
-  const displayRowTemplate = checkNonUndefined(document.getElementById('displaysTableRow'));
-  const displayTableInvalidRowTemplate = checkNonUndefined(document.getElementById('displaysTableInvalidRow'));
-
-  displayTable.replaceChildren();
   for (const display of displays) {
-    const displayRow = cloneNode(displayRowTemplate);
-    const cols = [...displayRow.getElementsByTagName('td')];
+    const displayRow = document.createElement('tr');
+    tableRows.push(displayRow);
+
+    const cols = new Array(8).fill(0).map(() => document.createElement('td'));
+    displayRow.replaceChildren(...cols);
 
     cols[0].replaceChildren(document.createTextNode(display.name));
     cols[1].replaceChildren(document.createTextNode(display.id.toString()));
@@ -170,23 +133,28 @@ async function showDisplays(configuredActions) {
     cols[5].replaceChildren(document.createTextNode(`${display.bounds.width}x${display.bounds.height}`));
     cols[6].replaceChildren(document.createTextNode(JSON.stringify(display.bounds, null, 2)));
     cols[7].replaceChildren(...actionsWithDisplay.filter((a) => a.matchedDisplay.id === display.id).map((action) => createTableChip(action.id)));
-
-    displayTable.appendChild(displayRow);
   }
 
   const missingDisplays = new Set(actionsWithoutDisplay.map((a) => a.display));
 
   for (const missingDisplay of missingDisplays) {
-    const displayRow = cloneNode(displayTableInvalidRowTemplate);
-    const cols = [...displayRow.getElementsByTagName('td')];
+    const displayRow = document.createElement('tr');
+    displayRow.classList.add('warning');
+    tableRows.push(displayRow);
+
+    const cols = new Array(3).fill(0).map(() => document.createElement('td'));
+    displayRow.replaceChildren(...cols);
 
     cols[0].replaceChildren(document.createTextNode(missingDisplay));
+    cols[0].colSpan = 2;
     cols[1].replaceChildren(document.createTextNode(
         `Display '${missingDisplay}' is referred by some of the actions but it doesn't exist (this is normal if the display is not currently connected).`,
     ));
+    cols[1].colSpan = 5;
     cols[2].replaceChildren(...actionsWithoutDisplay.filter((action) => action.display === missingDisplay).map((action) => createTableChip(action.id)));
-    displayTable.appendChild(displayRow);
   }
+
+  checkNonUndefined(document.getElementById('displaysTable')).replaceChildren(...tableRows);
 }
 
 /**
@@ -196,10 +164,7 @@ async function showDisplays(configuredActions) {
  * @return {Promise<void>}
  */
 async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMap) {
-  const actionsTableEl = checkNonUndefined(document.getElementById('actionsTable'));
-  const actionsTableRowTemplate = checkNonUndefined(document.getElementById('actionsTableRow'));
-  const actionsTableInvalidRow = checkNonUndefined(document.getElementById('actionsTableInvalidRow'));
-  actionsTableEl.replaceChildren();
+  const tableRows = [];
 
   // Prepare shortcuts map
   const commandIdPrefix = 'zzz-shortcut-';
@@ -213,21 +178,28 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
   const matchers = await combine2(Promise.resolve(matchersObj), Promise.resolve(filterWithDisplay(actions)), matchMatcherToAction);
 
   for (const [actionId, matchers] of matchersWithInvalidActionsMap) {
-    const displayRow = cloneNode(actionsTableInvalidRow);
-    const cols = [...displayRow.getElementsByTagName('td')];
+    const displayRow = document.createElement('tr');
+    displayRow.classList.add('error');
+    tableRows.push(displayRow);
+
+    const cols = new Array(4).fill(0).map(() => document.createElement('td'));
+    displayRow.replaceChildren(...cols);
 
     cols[0].replaceChildren(document.createTextNode(actionId));
     cols[1].replaceChildren(document.createTextNode('invalid'));
+    cols[1].colSpan = 3;
     cols[2].replaceChildren(...(matchers.map((matcher) => createMatcherDiv(matcher))));
     cols[3].replaceChildren(document.createTextNode('invalid'));
-
-    actionsTableEl.appendChild(displayRow);
+    cols[3].colSpan = 2;
   }
 
 
   for (const action of actions) {
-    const displayRow = cloneNode(actionsTableRowTemplate);
-    const cols = [...displayRow.getElementsByTagName('td')];
+    const displayRow = document.createElement('tr');
+    tableRows.push(displayRow);
+
+    const cols = new Array(7).fill(0).map(() => document.createElement('td'));
+    displayRow.replaceChildren(...cols);
 
     cols[0].replaceChildren(document.createTextNode(action.id));
     cols[1].replaceChildren(document.createTextNode(action.display));
@@ -238,10 +210,10 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
       cols[2].classList.add('warning');
     }
     cols[3].replaceChildren(createPositionsElement(action));
-    cols[4].replaceChildren(...matchers.filter((m) => m.actions.some((a) => a === action.id))
-        .map((m) => createMatcherDiv(m, m instanceof MatcherWithAction && m.matchedAction.id === action.id)),
-    );
 
+    const filteredMatchers = matchers.filter((m) => m.actions.some((a) => a === action.id))
+        .map((m) => createMatcherDiv(m, m instanceof MatcherWithAction && m.matchedAction.id === action.id));
+    cols[4].replaceChildren(...filteredMatchers);
     cols[5].replaceChildren(document.createTextNode(action.menuName || ''));
 
     const mappedShortcut = shortcutsMap.get(action.shortcutId);
@@ -252,9 +224,9 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     } else {
       cols[6].removeAttribute('class');
     }
-
-    actionsTableEl.appendChild(displayRow);
   }
+
+  checkNonUndefined(document.getElementById('actionsTable')).replaceChildren(...tableRows);
 }
 
 /**
@@ -384,7 +356,6 @@ function createJSONEditorForElement(elementId, initialValue, precompiledValidato
       mode: Mode.text,
       navigationBar: false,
       validator: getStubAjvForValidator(precompiledValidator),
-      onChange: onEditorChanged,
     },
   });
 }
@@ -392,13 +363,11 @@ function createJSONEditorForElement(elementId, initialValue, precompiledValidato
 /**
  * @param {JSONEditor} editor
  * @return {String}
- * @throws {SyntaxError} on invalid JSON
  */
 function getJsonTextFromEditor(editor) {
   const content = editor.get();
   if ('text' in content && content.text) {
-    // remove whitespace.
-    return JSON.stringify(JSON.parse(content.text));
+    return content.text;
   } if ('json' in content && content.json) {
     return JSON.stringify(content.json);
   } else {
@@ -413,13 +382,15 @@ function getJsonTextFromEditor(editor) {
 
 /**
  * Loads the config, and sets up editors.
+ *
+ * @return {Promise<void>}
  */
 function onPageLoad() {
   actionsEditor= createJSONEditorForElement('actionsInput', [], schemaValidator.actions);
   matchersEditor = createJSONEditorForElement('matchersInput', [], schemaValidator.matchers);
   settingsEditor = createJSONEditorForElement('settingsInput', {}, schemaValidator.settings);
 
-  storage.getRawConfiguration().then((config) => {
+  return storage.getRawConfiguration().then((config) => {
     actionsEditor.set({text: config.actions});
     matchersEditor.set({text: config.matchers});
     settingsEditor.set({text: config.settings});
@@ -429,78 +400,35 @@ function onPageLoad() {
     // Remove "Loading" messages.
     [...document.getElementsByClassName('loading')].forEach(
         (/** @type {HTMLElement} */ e) => e.style.display='none');
-    updateCounters();
-    validateEverything(); // async
-  });
+  })
+      .then(() => validateEverything())
+      .then(() => undefined);
 }
 
 
 /** @return {Promise<void>} */
-async function onDisplayChanged() {
+function onDisplayChanged() {
   const validatedConfig = validateJson();
-  await showDisplays(validatedConfig.actions);
+  return showDisplays(validatedConfig.actions);
 }
 
 
 /** @return {Promise<void>} */
-async function onSaveClick() {
-  try {
-    const validatedConfig = await validateEverything();
-    await storage.save(validatedConfig);
-    setStatus('Options saved');
-  } catch {
-    setStatus('Could not save invalid configuration');
-  }
+function onSaveClick() {
+  return validateEverything()
+      .then((validatedConfig) => storage.save(validatedConfig))
+      .then(() => setStatus('Options saved'))
+      .then(() => undefined)
+      .catch((e) => setStatus(e.message));
 }
 
 /**
  * Perform validation
+ * @return {Promise<void>}
  */
 function onValidateClick() {
-  try {
-    validateEverything();
-    setStatus('');
-  } catch {
-    setStatus('Invalid configuration');
-  }
+  return validateEverything().then(() => undefined);
 }
-
-let countersTimer = undefined;
-/**
- * Executed when editor contents are changed.
- *
- * Update counters - validation is done by editor.
- */
-function onEditorChanged() {
-  if (countersTimer) {
-    clearTimeout(countersTimer);
-  }
-  countersTimer = setTimeout(updateCounters, 500);
-}
-
-/**
- * Update the Actions and Matchers counters with the current text size.
- */
-function updateCounters() {
-  countersTimer = undefined;
-  const encoder = new TextEncoder();
-  let size;
-  try {
-    size = encoder.encode(getJsonTextFromEditor(actionsEditor)).length.toString();
-  } catch {
-    size='???';
-  }
-  checkNonUndefined(document.getElementById('actionsCounter')).textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
-
-
-  try {
-    size = encoder.encode(getJsonTextFromEditor(matchersEditor)).length.toString();
-  } catch {
-    size='???';
-  }
-  checkNonUndefined(document.getElementById('matchersCounter')).textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
-}
-
 
 /**
  * @param {KeyboardEvent} event
