@@ -20,7 +20,7 @@ export class Settings {
 
   /** @return {void} */
   validate() {
-    validateClass(new Settings(), this, ['popupButtonColor', 'popupBackgroundColor', 'triggerOnMonitorChange', 'triggerOnWindowCreated']);
+    validateClass(new Settings(), this, ['popupButtonColor', 'popupBackgroundColor', 'rememberPositionsSetWithShortcut', 'triggerOnMonitorChange', 'triggerOnWindowCreated']);
   }
 
 

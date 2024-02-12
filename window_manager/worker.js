@@ -89,12 +89,13 @@ export function updateWindowWithAllActions(windowId) {
     return Promise.reject(new Error('WindowId is undefined.'));
   }
 
-  const windowUpdatePromise = chrome.windows.get(windowId, {populate: true})
+  // Clear remembered position first
+  return getRememberPositionsSetWithShortcut()
+      .then((rememberPosition) => rememberPosition ? Session.clearWindowPosition(windowId) : undefined)
+  // do the regular processing now
+      .then(() => chrome.windows.get(windowId, {populate: true}))
       .then((window) => checkNonEmpty(window, `Could not find window of id: ${windowId}`))
       .then((window) => updateWindowsWithMatchedActions([window]));
-
-  return combine2(windowUpdatePromise, getRememberPositionsSetWithShortcut(), (windowUpdate, rememberPosition) => rememberPosition)
-      .then((rememberPosition) => rememberPosition ? Session.clearWindowPosition(windowId) : undefined);
 }
 
 /** @return {Promise<void>} */
