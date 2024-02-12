@@ -1,7 +1,7 @@
 import {filterWithDisplay, matchActionsToDisplay, Action, ActionWithDisplay} from './classes/action.js';
 import {Displays} from './classes/displays.js';
 import {matchMatcherToAction, Matcher, MatcherWithAction} from './classes/matcher.js';
-import {Storage, StorageToJson} from './classes/storage.js';
+import {Storage} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
 import {combine2} from './utils/promise.js';
 import {JSONEditor, Mode, createAjvValidator} from './jsoneditor/standalone.js';
