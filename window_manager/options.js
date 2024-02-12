@@ -215,20 +215,20 @@ async function showActions(actionsObj, matchersObj, matchersWithInvalidActionsMa
     } else {
       cols[2].classList.add('warning');
     }
-
-    cols[3].replaceChildren(...matchers.filter((m) => m.actions.some((a) => a === action.id))
+    cols[3].replaceChildren(createPositionsElement(action));
+    cols[4].replaceChildren(...matchers.filter((m) => m.actions.some((a) => a === action.id))
         .map((m) => createMatcherDiv(m, m instanceof MatcherWithAction && m.matchedAction.id === action.id)),
     );
 
-    cols[4].replaceChildren(document.createTextNode(action.menuName || ''));
+    cols[5].replaceChildren(document.createTextNode(action.menuName || ''));
 
     const mappedShortcut = shortcutsMap.get(action.shortcutId);
-    cols[5].replaceChildren(document.createTextNode(
+    cols[6].replaceChildren(document.createTextNode(
       action.shortcutId ? `${mappedShortcut || 'not set'} [${action.shortcutId}]` : ''));
     if (action.shortcutId && !mappedShortcut) {
-      cols[5].classList.add('warning');
+      cols[6].classList.add('warning');
     } else {
-      cols[5].removeAttribute('class');
+      cols[6].removeAttribute('class');
     }
 
     actionsTableEl.appendChild(displayRow);
@@ -257,6 +257,28 @@ function createTableChip(val) {
   el.textContent = val;
   el.classList.add('tableChip');
   return el;
+}
+
+/**
+ * @param {Action} action
+ * @return {HTMLElement}
+ */
+function createPositionsElement(action) {
+  const table = document.createElement('table');
+  const tr1 = document.createElement('tr');
+  const tr2 = document.createElement('tr');
+
+  const td12 = document.createElement('td');
+  td12.textContent = `${action.column.start} 🡒 ${action.column.end}`;
+
+  const td21 = document.createElement('td');
+  td21.innerHTML = `${action.row.start}<br>🡓<br>${action.row.end}`;
+
+  tr1.replaceChildren(document.createElement('td'), td12);
+  tr2.replaceChildren(td21, document.createElement('td'));
+  table.replaceChildren(tr1, tr2);
+  table.classList.add('positionsTable');
+  return table;
 }
 
 /**
