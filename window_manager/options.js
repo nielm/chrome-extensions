@@ -4,25 +4,17 @@ import {matchMatcherToAction, Matcher, MatcherWithAction} from './classes/matche
 import {Storage, StorageToJson} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
 import {combine2} from './utils/promise.js';
+import {JSONEditor, Mode, createAjvValidator} from './jsoneditor/standalone.js';
+import * as schemaValidator from './jsoneditor/schema-validator.js';
 
+// As defined here: https://developer.chrome.com/docs/extensions/reference/api/storage
+const QUOTA_BYTES_PER_ITEM = 8192;
 
 /**
  * @typedef {import('./classes/storage.js').ValidatedConfiguration} ValidatedConfiguration
  */
 
 const storage = new Storage();
-
-/**
- * @param {string} name
- * @return {HTMLTextAreaElement}
- */
-function getHTMLTextAreaElement(name) {
-  const result = document.getElementById(name);
-  if (!(result instanceof HTMLTextAreaElement)) {
-    throw new Error(`Expected '${name}' to be a HTMLTextAreaElement, was: ${result}`);
-  }
-  return result;
-}
 
 /**
  * @param {HTMLElement} el
@@ -55,12 +47,13 @@ function setWarning(field, message) {
  * Performs simple validation of json text.
  *
  * @return {ValidatedConfiguration}
+ * @throws {SyntaxError} on invalid JSON
  */
 function validateJson() {
   const config = {
-    actions: getHTMLTextAreaElement('actionsInput').value,
-    matchers: getHTMLTextAreaElement('matchersInput').value,
-    settings: getHTMLTextAreaElement('settingsInput').value,
+    actions: getJsonTextFromEditor(actionsEditor),
+    matchers: getJsonTextFromEditor(matchersEditor),
+    settings: getJsonTextFromEditor(settingsEditor),
   };
   const validatedConfig = storage.parse(config);
 
@@ -75,11 +68,40 @@ function validateJson() {
  * Performs full validation.
  *
  * @return {Promise<ValidatedConfiguration>}
+ * @throws {Error} on invalid configuration.
  */
 async function validateEverything() {
+  let isValid = true;
+
+  // Check editors validation state:
+  if (actionsEditor.validate() != null) {
+    setWarning('actions', 'Validation failed');
+    isValid = false;
+  } else {
+    setWarning('actions', '');
+  }
+  if (matchersEditor.validate() != null) {
+    setWarning('matchers', 'Validation failed');
+    isValid = false;
+  } else {
+    setWarning('matchers', '');
+  }
+  if (settingsEditor.validate() != null) {
+    setWarning('settings', 'Validation failed');
+    isValid = false;
+  } else {
+    setWarning('settings', '');
+  }
+
+  if (!isValid) {
+    throw new Error('Invalid configuration');
+  }
+
+  // Check JSON validation state:
   const validatedConfig = validateJson();
-  if (!validatedConfig.valid) {
-    return validatedConfig;
+
+  if (! validatedConfig.valid) {
+    throw new Error('Invalid configuration');
   }
 
   const matchersWithInvalidActionsMap = findMatchersWithInvalidActions(validatedConfig.actions, validatedConfig.matchers);
@@ -272,22 +294,122 @@ function setStatus(text) {
 }
 
 // ######################################################
+// #                 JSON editors                       #
+// ######################################################
+/** @type {JSONEditor} */
+let actionsEditor;
+/** @type {JSONEditor} */
+let matchersEditor;
+/** @type {JSONEditor} */
+let settingsEditor;
+
+/**
+ * @typedef {import('ajv').default} Ajv
+ * @typedef {import('vanilla-jsoneditor/standalone.js').Validator} Validator
+ */
+
+/**
+ * This is a hack around the JsonEditor's lack of support for precompiled
+ * schema validators, and on-demand compiled validators cannot be used
+ * because chrome extensions do not support eval()
+ *
+ * This returns a replacement for the Ajv instance created by the JsonEditor,
+ * providing the minimum required properties which include a compile() function
+ * that returns the precompiled validator.
+ *
+ * Used as an onCreateAjv option to {@link createAjvValidator}
+ *
+ * @see https://github.com/josdejong/svelte-jsoneditor/blob/main/src/lib/plugins/validator/createAjvValidator.ts#L46
+ *
+ * @param {Function} validateFunction
+ * @return {Validator} stub Ajv instance.
+ */
+function getStubAjvForValidator(validateFunction) {
+  /** @type{Ajv} */
+  const stubAjv = {
+    // @ts-expect-error
+    opts: {
+      verbose: true,
+    },
+    // @ts-expect-error
+    compile: () => {
+      return validateFunction;
+    },
+  };
+
+  return createAjvValidator(
+      {
+        schema: {},
+        onCreateAjv: () => {
+          return stubAjv;
+        },
+      });
+}
+
+/**
+ * Builds a JSONEditor for the given parameters.
+ *
+ * @param {String} elementId
+ * @param {*} initialValue
+ * @param {Function} precompiledValidator
+ * @return {JSONEditor}
+ */
+function createJSONEditorForElement(elementId, initialValue, precompiledValidator) {
+  return new JSONEditor({
+    target: checkNonUndefined(document.getElementById(elementId)),
+    props: {
+      content: {json: initialValue},
+      mode: Mode.text,
+      navigationBar: false,
+      validator: getStubAjvForValidator(precompiledValidator),
+      onChange: onEditorChanged,
+    },
+  });
+}
+
+/**
+ * @param {JSONEditor} editor
+ * @return {String}
+ * @throws {SyntaxError} on invalid JSON
+ */
+function getJsonTextFromEditor(editor) {
+  const content = editor.get();
+  if ('text' in content && content.text) {
+    // remove whitespace.
+    return JSON.stringify(JSON.parse(content.text));
+  } if ('json' in content && content.json) {
+    return JSON.stringify(content.json);
+  } else {
+    throw new Error('unexpected content from json Editor: '+content);
+  }
+}
+
+
+// ######################################################
 // #                 Event Handlers                     #
 // ######################################################
 
 /**
- * Restores the preferences from the storage.
- * @return {void}
+ * Loads the config, and sets up editors.
  */
 function onPageLoad() {
-  storage.getRawConfiguration()
-      .then((items) => {
-        getHTMLTextAreaElement('actionsInput').value = items.actions;
-        getHTMLTextAreaElement('matchersInput').value = items.matchers;
-        getHTMLTextAreaElement('settingsInput').value = items.settings;
-      },
-      ).then(() => validateEverything())
-  ;
+  actionsEditor= createJSONEditorForElement('actionsInput', [], schemaValidator.actions);
+  matchersEditor = createJSONEditorForElement('matchersInput', [], schemaValidator.matchers);
+  settingsEditor = createJSONEditorForElement('settingsInput', {}, schemaValidator.settings);
+
+  storage.getRawConfiguration().then((config) => {
+    actionsEditor.set({text: config.actions});
+    matchersEditor.set({text: config.matchers});
+    settingsEditor.set({text: config.settings});
+    // Make editors visible.
+    [...document.getElementsByClassName('jsonEditor')].forEach(
+        (/** @type {HTMLElement} */ e) => e.style.display='');
+    // Remove "Loading" messages.
+    [...document.getElementsByClassName('loading')].forEach(
+        (/** @type {HTMLElement} */ e) => e.style.display='none');
+    updateCounters();
+    validateEverything(); // async
+  });
 }
 
 
@@ -300,40 +422,63 @@ async function onDisplayChanged() {
 
 /** @return {Promise<void>} */
 async function onSaveClick() {
-  const validatedConfig = await validateEverything();
-
-  return storage.save(validatedConfig)
-      .then(() => setStatus('Options saved'))
-      .catch((e) => setStatus(e.message));
-}
-
-/** @return {Promise<void>} */
-async function onValidateClick() {
-  await validateEverything();
-}
-
-/** @return {Promise<void>} */
-async function onFormatClick() {
-  const validatedConfig = await validateJson();
-
-  if (validatedConfig.valid) {
-    getHTMLTextAreaElement('actionsInput').value = StorageToJson.actions(validatedConfig.actions);
-    getHTMLTextAreaElement('matchersInput').value = StorageToJson.matchers(validatedConfig.matchers);
-    getHTMLTextAreaElement('settingsInput').value = StorageToJson.settings(validatedConfig.settings);
+  try {
+    const validatedConfig = await validateEverything();
+    await storage.save(validatedConfig);
+    setStatus('Options saved');
+  } catch {
+    setStatus('Could not save invalid configuration');
   }
 }
 
-let textAreaValidationTimer = undefined;
 /**
- * @param {KeyboardEvent} event
- * @return {void}
+ * Perform validation
  */
-function onTextAreaKeyUp(event) {
-  if (textAreaValidationTimer) {
-    clearTimeout(textAreaValidationTimer);
+function onValidateClick() {
+  try {
+    validateEverything();
+    setStatus('');
+  } catch {
+    setStatus('Invalid configuration');
   }
-  textAreaValidationTimer = setTimeout(validateJson, 100);
 }
+
+let countersTimer = undefined;
+/**
+ * Executed when editor contents are changed.
+ *
+ * Update counters - validation is done by editor.
+ */
+function onEditorChanged() {
+  if (countersTimer) {
+    clearTimeout(countersTimer);
+  }
+  countersTimer = setTimeout(updateCounters, 500);
+}
+
+/**
+ * Update the Actions and Matchers counters with the current text size.
+ */
+function updateCounters() {
+  countersTimer = undefined;
+  const encoder = new TextEncoder();
+  let size;
+  try {
+    size = encoder.encode(getJsonTextFromEditor(actionsEditor)).length.toString();
+  } catch {
+    size='???';
+  }
+  checkNonUndefined(document.getElementById('actionsCounter')).textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+
+
+  try {
+    size = encoder.encode(getJsonTextFromEditor(matchersEditor)).length.toString();
+  } catch {
+    size='???';
+  }
+  checkNonUndefined(document.getElementById('matchersCounter')).textContent = `${size}/${QUOTA_BYTES_PER_ITEM}`;
+}
+
 
 /**
  * @param {KeyboardEvent} event
@@ -355,10 +500,5 @@ document.addEventListener('DOMContentLoaded', onDisplayChanged);
 document.addEventListener('keydown', onKeyDown);
 checkNonUndefined(document.getElementById('save')).addEventListener('click', onSaveClick);
 checkNonUndefined(document.getElementById('validate')).addEventListener('click', onValidateClick);
-checkNonUndefined(document.getElementById('format')).addEventListener('click', onFormatClick);
-
-checkNonUndefined(document.getElementById('actionsInput')).addEventListener('keyup', onTextAreaKeyUp);
-checkNonUndefined(document.getElementById('matchersInput')).addEventListener('keyup', onTextAreaKeyUp);
-checkNonUndefined(document.getElementById('settingsInput')).addEventListener('keyup', onTextAreaKeyUp);
 
 chrome.system.display.onDisplayChanged.addListener(onDisplayChanged);
