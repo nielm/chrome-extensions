@@ -102,6 +102,7 @@ const SCHEMA_DEFINITIONS = [
     properties: {
       popupButtonColor: {type: 'string', minLength: 1},
       popupBackgroundColor: {type: 'string', minLength: 1},
+      rememberPositionsSetWithShortcut: triggerOnMonitorChange: {type: 'boolean'},
       triggerOnMonitorChange: {type: 'boolean'},
       triggerOnWindowCreated: {type: 'boolean'},
     },
