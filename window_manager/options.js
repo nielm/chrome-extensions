@@ -4,7 +4,7 @@ import {matchMatcherToAction, Matcher, MatcherWithAction} from './classes/matche
 import {Storage} from './classes/storage.js';
 import {checkNonUndefined} from './utils/preconditions.js';
 import {combine2} from './utils/promise.js';
-import {JSONEditor, Mode, createAjvValidator} from './jsoneditor/standalone.js';
+import * as StandaloneJsonEditor from './jsoneditor/standalone.js';
 import * as schemaValidator from './jsoneditor/schema-validator.js';
 
 /**
@@ -290,11 +290,11 @@ function setStatus(text) {
 // ######################################################
 // #                 JSON editors                       #
 // ######################################################
-/** @type {JSONEditor} */
+/** @type {StandaloneJsonEditor.JSONEditor} */
 let actionsEditor;
-/** @type {JSONEditor} */
+/** @type {StandaloneJsonEditor.JSONEditor} */
 let matchersEditor;
-/** @type {JSONEditor} */
+/** @type {StandaloneJsonEditor.JSONEditor} */
 let settingsEditor;
 
 /**
@@ -303,22 +303,31 @@ let settingsEditor;
  */
 
 /**
+ * Returns a JSONEditor schema validator wrapping a precomiled AJV Schema
+ * validator.
+ *
  * This is a hack around the JsonEditor's lack of support for precompiled
- * schema validators, and on-demand compiled validators cannot be used
- * because chrome extensions do not support eval()
+ * schema validators. It only supports on-demand compiled validators, and these
+ * cannot be used because chrome extensions do not support eval()
  *
- * This returns a replacement for the Ajv instance created by the JsonEditor,
- * providing the minimum required properties which include a compile() function
- * that returns the precompiled validator.
+ * This function creates a stub replacement for the Ajv instance created by the
+ * JsonEditor, providing the minimum required properties which include a
+ * compile() function that returns the precompiled AJV validator.
  *
- * Used as an onCreateAjv option to {@link createAjvValidator}
+ * This stub is then returned from an onCreateAjv function passed as an option
+ * to JSONEditor's {@link StandaloneJsonEditor.createAjvValidator}.
+ *
+ * The JSONEditor {@link StandaloneJsonEditor.createAjvValidator} function is still required because
+ * it enhances the errors returned by the AJV validator function
  *
  * @see https://github.com/josdejong/svelte-jsoneditor/blob/main/src/lib/plugins/validator/createAjvValidator.ts#L46
  *
- * @param {Function} validateFunction
- * @return {Validator} stub Ajv instance.
+ * @param {Function} validateFunction AJV schema validator.
+ * @return {Validator} JSONEditor wrapped schema validator.
  */
-function getStubAjvForValidator(validateFunction) {
+function createAjvValidatorForPrecompiled(validateFunction) {
+  // Create a stub Ajv instance providing the minimum required properties
+  // needed by the JSONEditor.
   /** @type{Ajv} */
   const stubAjv = {
     // @ts-expect-error
@@ -331,7 +340,7 @@ function getStubAjvForValidator(validateFunction) {
     },
   };
 
-  return createAjvValidator(
+  return StandaloneJsonEditor.createAjvValidator(
       {
         schema: {},
         onCreateAjv: () => {
@@ -346,32 +355,36 @@ function getStubAjvForValidator(validateFunction) {
  * @param {String} elementId
  * @param {*} initialValue
  * @param {Function} precompiledValidator
- * @return {JSONEditor}
+ * @return {StandaloneJsonEditor.JSONEditor}
  */
 function createJSONEditorForElement(elementId, initialValue, precompiledValidator) {
-  return new JSONEditor({
+  return new StandaloneJsonEditor.JSONEditor({
     target: checkNonUndefined(document.getElementById(elementId)),
     props: {
       content: {json: initialValue},
-      mode: Mode.text,
+      mode: StandaloneJsonEditor.Mode.text,
       navigationBar: false,
-      validator: getStubAjvForValidator(precompiledValidator),
+      validator: createAjvValidatorForPrecompiled(precompiledValidator),
     },
   });
 }
 
 /**
- * @param {JSONEditor} editor
+ * @param {StandaloneJsonEditor.JSONEditor} editor
  * @return {String}
  */
 function getJsonTextFromEditor(editor) {
   const content = editor.get();
-  if ('text' in content && content.text) {
+
+  // content can contain either text or json properties, depending
+  // on whether the text is valid JSON or where the user
+  // is in the JSONEditor UI.
+  if ('text' in content && content.text != null) {
     return content.text;
-  } if ('json' in content && content.json) {
+  } if ('json' in content && content.json != null) {
     return JSON.stringify(content.json);
   } else {
-    throw new Error('unexpected content from json Editor: '+content);
+    throw new Error('unexpected content from json Editor: '+JSON.stringify(content));
   }
 }
 
@@ -446,7 +459,6 @@ function onKeyDown(event) {
 }
 
 document.addEventListener('DOMContentLoaded', onPageLoad);
-document.addEventListener('DOMContentLoaded', onDisplayChanged);
 document.addEventListener('keydown', onKeyDown);
 checkNonUndefined(document.getElementById('save')).addEventListener('click', onSaveClick);
 checkNonUndefined(document.getElementById('validate')).addEventListener('click', onValidateClick);

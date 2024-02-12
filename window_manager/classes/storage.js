@@ -228,7 +228,14 @@ class StorageFromJson {
    * @return {Action[]}
    */
   static actions(actions) {
-    return JSON.parse(actions).map((a) => Action.from(a));
+    if (actions.trim().length===0) {
+      throw new Error('Actions needs to be an array');
+    }
+    const actionsObj = JSON.parse(actions);
+    if (! (actionsObj instanceof Array)) {
+      throw new Error('Actions needs to be an array');
+    }
+    return actionsObj.map((a) => Action.from(a));
   }
 
   /**
@@ -236,7 +243,14 @@ class StorageFromJson {
    * @return {Matcher[]}
    */
   static matchers(matchers) {
-    return JSON.parse(matchers).map((m) => Matcher.from(m)); ;
+    if (matchers.trim().length===0) {
+      throw new Error('Matchers needs to be an array');
+    }
+    const matchersObj = JSON.parse(matchers);
+    if (! (matchersObj instanceof Array)) {
+      throw new Error('Matchers needs to be an array');
+    }
+    return matchersObj.map((m) => Matcher.from(m)); ;
   }
 
   /**
@@ -244,6 +258,13 @@ class StorageFromJson {
    * @return {Settings}
    */
   static settings(settings) {
-    return Settings.from(JSON.parse(settings));
+    if (settings.trim().length===0) {
+      throw new Error('Settings needs to be an Object');
+    }
+    const settingsObj = JSON.parse(settings);
+    if (! (settingsObj instanceof Object)) {
+      throw new Error('Settings needs to be an Object');
+    }
+    return Settings.from(settingsObj);
   }
 }
