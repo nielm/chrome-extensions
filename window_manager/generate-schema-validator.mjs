@@ -23,7 +23,6 @@ const SCHEMA_DEFINITIONS = [
     oneOf: [
       {
         type: 'number',
-        minimum: 0,
       },
       {
         type: 'string',
