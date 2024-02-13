@@ -16,6 +16,8 @@
     "eslint": "npx eslint '**/*.*js' --ignore-pattern '**/jsoneditor/*'",
     "eslint-fix": "npx eslint --fix '**/*.*js'  --ignore-pattern '**/jsoneditor/*'",
     "typecheck": "tsc --project jsconfig.json --maxNodeModuleJsDepth 0 --noEmit",
-    "build-wm-files": "cp node_modules/vanilla-jsoneditor/standalone.* window_manager/jsoneditor/ && cd window_manager && node ./generate-schema-validator.mjs"
+    "generate-files": "cp node_modules/vanilla-jsoneditor/standalone.* window_manager/jsoneditor/ && cd window_manager && node ./generate-schema-validator.mjs",
+    "build-wm-files": "npm run generate-files",
+    "build-extension": "$(dirname $npm_package_json)/build-extension.sh"
   }
 }
