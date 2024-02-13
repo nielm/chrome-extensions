@@ -119,18 +119,18 @@ export class Storage {
   }
 
   /** @return {Promise<Action[]>} */
-  async getActions() {
-    return (await this.validatedConfiguration).actions;
+  getActions() {
+    return this.validatedConfiguration.then((config) => config.actions);
   }
 
   /** @return {Promise<Matcher[]>} */
-  async getMatchers() {
-    return (await this.validatedConfiguration).matchers;
+  getMatchers() {
+    return this.validatedConfiguration.then((config) => config.matchers);
   }
 
   /** @return {Promise<Settings>} */
-  async getSettings() {
-    return (await this.validatedConfiguration).settings;
+  getSettings() {
+    return this.validatedConfiguration.then((config) => config.settings);
   }
 
   /**
