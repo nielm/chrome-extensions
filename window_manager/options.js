@@ -11,8 +11,6 @@ import * as schemaValidator from './jsoneditor/schema-validator.js';
  * @typedef {import('./classes/storage.js').ValidatedConfiguration} ValidatedConfiguration
  */
 
-const storage = new Storage();
-
 /**
  * @param {string} field
  * @param {string} message
@@ -39,7 +37,7 @@ function validateJson() {
     matchers: getJsonTextFromEditor(matchersEditor),
     settings: getJsonTextFromEditor(settingsEditor),
   };
-  const validatedConfig = storage.parse(config);
+  const validatedConfig = Storage.parse(config);
 
   // Also check editors validation.
   if (actionsEditor.validate() != null || matchersEditor.validate() != null || settingsEditor.validate() != null) {
@@ -403,7 +401,7 @@ function onPageLoad() {
   matchersEditor = createJSONEditorForElement('matchersInput', [], schemaValidator.matchers);
   settingsEditor = createJSONEditorForElement('settingsInput', {}, schemaValidator.settings);
 
-  return storage.getRawConfiguration().then((config) => {
+  return Storage.getRawConfiguration().then((config) => {
     actionsEditor.set({text: config.actions});
     matchersEditor.set({text: config.matchers});
     settingsEditor.set({text: config.settings});
@@ -429,7 +427,7 @@ function onDisplayChanged() {
 /** @return {Promise<void>} */
 function onSaveClick() {
   return validateEverything()
-      .then((validatedConfig) => storage.save(validatedConfig))
+      .then((validatedConfig) => Storage.save(validatedConfig))
       .then(() => setStatus('Options saved'))
       .then(() => undefined)
       .catch((e) => setStatus(e.message));

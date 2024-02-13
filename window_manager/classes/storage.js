@@ -20,6 +20,9 @@ import {Settings} from './settings.js';
  * @property {string} settings
  */
 
+/** Session config key for the validated configuration */
+const VALID_CONFIG_KEY = 'validConfig';
+
 /** Storage class */
 export class Storage {
   /** @type {Storage} */
@@ -28,7 +31,11 @@ export class Storage {
   /**
    * It will try to return existing instance of storage.
    *
-   * Note that the same Storage class is used by worker, popup and options. They don't share the namespace.
+   * Note that the same Storage class is used by worker and popup.
+   * They don't share the instance.
+   *
+   * Config will try to be read from Session storage, and if it does not
+   * exist, then read from Synced storage and copied into Session storage
    */
   constructor() {
     // Checking if the instance already exists
@@ -38,6 +45,62 @@ export class Storage {
     }
     Storage.#instance = this;
     console.log('Storage instance created');
+
+    /** @type {Promise<ValidatedConfiguration>} */
+    this.validatedConfiguration = Storage.loadConfigFromStorage();
+  }
+
+  /**
+   * Load config from storage. First try session storage, then read from synced.
+   * @return {Promise<ValidatedConfiguration>}
+   */
+  static async loadConfigFromStorage() {
+    const validConfig = /** @type {ValidatedConfiguration} */(
+      (await chrome.storage.session.get({[VALID_CONFIG_KEY]: null}))[VALID_CONFIG_KEY]);
+
+    if (validConfig?.valid) {
+      console.info(`${new Date().toLocaleTimeString()} Valid config read from session storage`);
+
+      // convert raw JS objects to classes.
+      validConfig.actions = StorageFromJson.actionsFromObj(validConfig.actions);
+      validConfig.matchers = StorageFromJson.matchersFromObj(validConfig.matchers);
+      validConfig.settings = StorageFromJson.settingsFromObj(validConfig.settings);
+      return validConfig;
+    }
+    // config in session store not present or not valid, try synced storage.
+    return Storage.loadConfigFromSyncedStorage();
+  }
+
+  /**
+   * Read config from synced storage, and update session storage copy.
+   * @return {Promise<ValidatedConfiguration>}
+   */
+  static async loadConfigFromSyncedStorage() {
+    const parsedConfig = Storage.parse((await Storage.getRawConfiguration()));
+
+    if (parsedConfig.valid) {
+      // update session storage.
+      chrome.storage.session.set({[VALID_CONFIG_KEY]: parsedConfig});
+      console.info(`${new Date().toLocaleTimeString()} Config read from synced storage, copied to session storage`);
+      return parsedConfig;
+    }
+
+    // Should never get here because synced storage is perfect in every way!
+    await chrome.storage.session.remove(VALID_CONFIG_KEY);
+    return Promise.reject(
+        new Error(`${new Date().toLocaleTimeString()
+        } Failed parsing config from synced storage errors: actions:${
+          parsedConfig.actionsValidation
+        } matchers:${
+          parsedConfig.matchersValidation
+        } settings:${
+          parsedConfig.settingsValidation
+        }`));
+  }
+
+  /** refreshes local and sessiion storage from synced storage */
+  refreshConfigFromSyncedStorage() {
+    this.validatedConfiguration = Storage.loadConfigFromSyncedStorage();
   }
 
   /**
@@ -46,7 +109,7 @@ export class Storage {
    *
    * @return {Promise<RawConfiguration>}
    */
-  getRawConfiguration() {
+  static getRawConfiguration() {
     return chrome.storage.sync.get({actions: '[]', matchers: '[]', settings: '{}'})
         .then((item) => ({
           actions: Storage.#maybeFormat(item.actions),
@@ -55,37 +118,19 @@ export class Storage {
         }));
   }
 
-  /**
-   * Returns actions from the storage.
-   * Note: this method is not performing any validation as the data in the storage
-   *       should be valid.
-   *
-   * @return {Promise<Action[]>}
-   */
-  getActions() {
-    return chrome.storage.sync.get({actions: '[]'}).then((item) => item.actions).then(StorageFromJson.actions);
+  /** @return {Promise<Action[]>} */
+  async getActions() {
+    return (await this.validatedConfiguration).actions;
   }
 
-  /**
-   * Returns matchers from the storage.
-   * Note: this method is not performing any validation as the data in the storage
-   *       should be valid.
-   *
-   * @return {Promise<Matcher[]>}
-   */
-  getMatchers() {
-    return chrome.storage.sync.get({matchers: '[]'}).then((item) => item.matchers).then(StorageFromJson.matchers);
+  /** @return {Promise<Matcher[]>} */
+  async getMatchers() {
+    return (await this.validatedConfiguration).matchers;
   }
 
-  /**
-   * Returns settings from the storage.
-   * Note: this method is not performing any validation as the data in the storage
-   *       should be valid.
-   *
-   * @return {Promise<Settings>}
-   */
-  getSettings() {
-    return chrome.storage.sync.get({settings: '{}'}).then((item) => item.settings).then(StorageFromJson.settings);
+  /** @return {Promise<Settings>} */
+  async getSettings() {
+    return (await this.validatedConfiguration).settings;
   }
 
   /**
@@ -94,7 +139,7 @@ export class Storage {
    * @param {RawConfiguration} configuration
    * @return {ValidatedConfiguration}
    */
-  parse(configuration) {
+  static parse(configuration) {
     /** @type {ValidatedConfiguration} */
     const result = {
       valid: true,
@@ -156,15 +201,19 @@ export class Storage {
   }
 
   /**
-   * Saves validated configuration to the storage.
+   * Saves validated configuration to the synced storage.
    *
    * @param {ValidatedConfiguration} configuration
    * @return {Promise<void>}
    */
-  async save(configuration) {
+  static async save(configuration) {
     if (configuration.valid !== true) {
       throw new Error('Could not save invalid configuration');
     }
+
+    // No need to update session storage - if anything is actually changed
+    // the onChanged event handler in the service workers background.js
+    // will refresh the session storage, and the Storage instance
     return chrome.storage.sync.set(
         {
           actions: StorageToJson.actions(configuration.actions, 0),
@@ -172,7 +221,6 @@ export class Storage {
           settings: StorageToJson.settings(configuration.settings, 0),
         });
   }
-
 
   /**
    * It will try to format the string data but won't fail in case of problems.
@@ -231,7 +279,14 @@ class StorageFromJson {
     if (actions.trim().length===0) {
       throw new Error('Actions needs to be an array');
     }
-    const actionsObj = JSON.parse(actions);
+    return this.actionsFromObj(JSON.parse(actions));
+  }
+
+  /**
+   * @param {Object[]} actionsObj
+   * @return {Action[]}
+   */
+  static actionsFromObj(actionsObj) {
     if (! (actionsObj instanceof Array)) {
       throw new Error('Actions needs to be an array');
     }
@@ -246,7 +301,14 @@ class StorageFromJson {
     if (matchers.trim().length===0) {
       throw new Error('Matchers needs to be an array');
     }
-    const matchersObj = JSON.parse(matchers);
+    return this.matchersFromObj(JSON.parse(matchers));
+  }
+
+  /**
+   * @param {Object[]} matchersObj
+   * @return {Matcher[]}
+   */
+  static matchersFromObj(matchersObj) {
     if (! (matchersObj instanceof Array)) {
       throw new Error('Matchers needs to be an array');
     }
@@ -261,7 +323,14 @@ class StorageFromJson {
     if (settings.trim().length===0) {
       throw new Error('Settings needs to be an Object');
     }
-    const settingsObj = JSON.parse(settings);
+    return this.settingsFromObj(JSON.parse(settings));
+  }
+
+  /**
+   * @param {Object} settingsObj
+   * @return {Settings}
+   */
+  static settingsFromObj(settingsObj) {
     if (! (settingsObj instanceof Object)) {
       throw new Error('Settings needs to be an Object');
     }

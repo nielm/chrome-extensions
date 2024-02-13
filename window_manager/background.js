@@ -85,3 +85,10 @@ chrome.runtime.onMessage.addListener(
       return promise.catch((e) => console.error(`onMessage failed with error: ${e.message}.`));
     },
 );
+
+
+// If synced storage changes, refresh local copy.
+chrome.storage.sync.onChanged.addListener((changes) => {
+  console.info(`${new Date().toLocaleTimeString()} synced config updated: changed keys: ${Object.keys(changes)}`);
+  storage.refreshConfigFromSyncedStorage();
+});
