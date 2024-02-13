@@ -98,7 +98,7 @@ export class Storage {
         }`));
   }
 
-  /** refreshes local and sessiion storage from synced storage */
+  /** refreshes local and session storage from synced storage */
   refreshConfigFromSyncedStorage() {
     this.validatedConfiguration = Storage.loadConfigFromSyncedStorage();
   }
